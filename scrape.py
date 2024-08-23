@@ -8,9 +8,11 @@ import platform
 import threading
 import argparse
 import tkinter as tk
+import queue
 from tkinter import messagebox
 from datetime import datetime
 from functools import partial
+
 
 
 from scrape.json import read_json, write_json
@@ -49,7 +51,7 @@ REQUIRED_MODULES = ['setuptools','pyppeteer','wmi','pywintypes','pytz','ntplib',
 #######################################################################################################################
 
 
-JSON_LOG = read_json(PATH_TO_JSON_LOG) if os.path.exists(PATH_TO_JSON_LOG) else {
+_json_log = read_json(PATH_TO_JSON_LOG) if os.path.exists(PATH_TO_JSON_LOG) else {
     "Description": "This is a log file for the host information and the application status.",
     "HOST":{
         "PC-NAME": os.environ['COMPUTERNAME'],
@@ -106,12 +108,15 @@ def open_application(executable_path,app_name):
         )
         get_yes_or_no("Is in the installation path have executable file and it run successfuly ? (y,n)")
         return None
-    
-    for exts in result:
-        for file in exts:
-            if file and os.path.isfile(file):
-                proccess = subprocess.Popen(file)
-                return proccess
+
+    if len(result) > 1:
+        print(Fore.MAGENTA + f"Multiple executable found path '{app_name}'. Please select one" )
+        dict = {}
+        for path in result:
+            dict[path] = path
+        key = chose_app_to_open(dict)
+        return subprocess.Popen([dict[key]])
+        
 
     return None
  
@@ -334,8 +339,7 @@ def chose_app_to_open(app_list):
     is_in_invalid = True
     
     while is_in_invalid:
-        input_num = input("Input number to chose or 'all' to open each instalation path : ")
-        
+        input_num = input(Fore.WHITE + Back.MAGENTA + f"Input number to chose or 'all' to open each instalation path : ")
         if input_num == 'all':
             for i,app in enumerate(app_list):
                 open_application(app_list[app],app)
@@ -355,8 +359,8 @@ def _check_app(label_app_name,**kwargs):
     print(f"Running function check_app on thread: {threading.current_thread().name}")
     
 
-    if label_app_name in JSON_LOG['APPLICATION-STATUS']:
-        del JSON_LOG['APPLICATION-STATUS'][label_app_name]
+    if label_app_name in _json_log['APPLICATION-STATUS']:
+        del _json_log['APPLICATION-STATUS'][label_app_name]
 
     log_app = {
         "Name": label_app_name,
@@ -528,8 +532,8 @@ def _check_app(label_app_name,**kwargs):
 
     log_app["Check_Time"] = time.time() - start_time
     log_app["Check_with"] = check_with
-    JSON_LOG['APPLICATION-STATUS'][label_app_name] = log_app
-    write_json(JSON_LOG, PATH_TO_JSON_LOG)
+    _json_log['APPLICATION-STATUS'][label_app_name] = log_app
+    write_json(_json_log, PATH_TO_JSON_LOG)
     
 
 async def _check_applications(apps, **kwargs):
@@ -546,11 +550,11 @@ async def _check_applications(apps, **kwargs):
     print("Start checking each required app or tools.")
     print('-' * 150)
 
-    checked_apps = [app for app in JSON_LOG['APPLICATION-STATUS']]
+    checked_apps = [app for app in _json_log['APPLICATION-STATUS']]
     installed_apps = None
     
     if kwargs.get('skip_installed',False):
-        installed_apps = [app for app in JSON_LOG['APPLICATION-STATUS'] if JSON_LOG['APPLICATION-STATUS'][app]['Status'] == 'INSTALLED']
+        installed_apps = [app for app in _json_log['APPLICATION-STATUS'] if _json_log['APPLICATION-STATUS'][app]['Status'] == 'INSTALLED']
     
     if not kwargs.get('async',False):
         for label_app_name in apps:
@@ -581,11 +585,11 @@ async def _check_applications(apps, **kwargs):
     print("CHECK SUMMARY")
     print("-"*150)
 
-    for i,app in enumerate(JSON_LOG['APPLICATION-STATUS']):
-        print(f"{i}. {app} : {JSON_LOG['APPLICATION-STATUS'][app]['Status']}")
-        print(f"Description : {JSON_LOG['APPLICATION-STATUS'][app]['Description']}")
-        print(f"Check Duration : {JSON_LOG['APPLICATION-STATUS'][app]['Check_Time']} seconds")
-        print(f"Check with : {JSON_LOG['APPLICATION-STATUS'][app]['Check_with']}")
+    for i,app in enumerate(_json_log['APPLICATION-STATUS']):
+        print(f"{i}. {app} : {_json_log['APPLICATION-STATUS'][app]['Status']}")
+        print(f"Description : {_json_log['APPLICATION-STATUS'][app]['Description']}")
+        print(f"Check Duration : {_json_log['APPLICATION-STATUS'][app]['Check_Time']} seconds")
+        print(f"Check with : {_json_log['APPLICATION-STATUS'][app]['Check_with']}")
         print("-"*150)
     
 
@@ -679,7 +683,7 @@ async def _scrape(username, password, **kwargs):
  
  
         # Print the extracted text
-        labels = ['flutter-sdk',"visual-studio-code",'flutter-extension','virtualization','python','git', 'virtual-box', 'chrome']
+        labels = ['flutter-sdk',"visual-studio-code",'flutter-extension','virtualization','git', 'virtual-box', 'chrome']
 
         print('-' * 150)
         print("Applications to check:")
@@ -748,7 +752,7 @@ async def get_host_info():
     print("Host information retrieval completed.")
     print("-"*50)
     
-    JSON_LOG['HOST-SPECS'] = {
+    _json_log['HOST-SPECS'] = {
         "CPU": cpu_info,
         "RAM": ram_info_list,
         "GPU": gpu_info_list,
@@ -756,7 +760,7 @@ async def get_host_info():
         "Network": network_info_list
     }
     
-    write_json(JSON_LOG, PATH_TO_JSON_LOG)
+    write_json(_json_log, PATH_TO_JSON_LOG)
   
 async def main():
  

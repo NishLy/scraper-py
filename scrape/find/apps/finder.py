@@ -66,9 +66,9 @@ def find_executable_on_path(executable_path,executable_name,executable_formats =
     found = []
     for ext in executable_formats:
         search_path = os.path.join(executable_path,f"{executable_name}*.{ext}")
-        found.extend(glob.glob(search_path))
+        if (result := glob.glob(search_path)):
+            found.extend(result)
         
     if len(found) == 0:
         return None
-    
     return found
