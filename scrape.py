@@ -4,17 +4,20 @@ import subprocess
 import sys
 import os
 import time
-import glob
 import platform
-import traceback
 import threading
-import pythoncom
+import argparse
+import tkinter as tk
+from tkinter import messagebox
+from datetime import datetime
 from functools import partial
+
 
 from scrape.json import read_json, write_json
 from scrape.module import check_required_modules
 from scrape.time import set_time
 from scrape.find.apps import find_installed_apps_by_wmi,find_installed_apps_by_registry,find_executable_on_path
+from scrape.host.check import check_virtualization
 
 #######################################################################################################################
 # Bootstrap pip
@@ -59,38 +62,29 @@ JSON_LOG = read_json(PATH_TO_JSON_LOG) if os.path.exists(PATH_TO_JSON_LOG) else 
     "APPLICATION-STATUS": {}
 }
 
-instructions = []
-
+_instructions = []
 if os.path.exists(PATH_INSTRUCTIONS):
     for file in os.listdir(PATH_INSTRUCTIONS):
         base, ext = os.path.splitext(file)
         if ext.lower() == '.py':
-            instructions.append(base.lower())
+            _instructions.append(base.lower())
 else:
     # close the app
     print(f"Instructions folder not found. Please create a folder named 'instructions' in the same directory as this script.")
     sys.exit(1)
 
 # Cheking required modules
-check_required_modules()
+check_required_modules(REQUIRED_MODULES)
 
 #######################################################################################################################
 #Late module import
 #######################################################################################################################
-
-import argparse
-import asyncio
-import os
-import re
-import tkinter as tk
-from tkinter import messagebox
-import wmi
-from pyppeteer import launch
-import ntplib
-from datetime import datetime
-import pytz
-import platform
 from colorama import Fore, Style, init, Back
+
+
+
+
+
 
 init(autoreset=True)
  
@@ -238,35 +232,6 @@ def check_chrome():
     print(result)
     return result
 
-#######################################################################################################################
-# Check Virtualization function
-#######################################################################################################################
-
-def check_virtualization():
-    pythoncom.CoInitialize()
-    c = wmi.WMI()
-    for processor in c.Win32_Processor():
-        if hasattr(processor, 'VirtualizationFirmwareEnabled'):
-            if processor.VirtualizationFirmwareEnabled:
-                print("#"*150)
-                print("This Computer CPU Virtualization is enabled")
-                print("#"*150)
-                pythoncom.CoUninitialize()
-                return True
-            else:
-                print("#"*150)
-                print("This Computer CPU Virtualization is not enabled")
-                print("#"*150)
-                pythoncom.CoUninitialize()
-                return False
-        else:
-            print("#"*150)
-            print("This Computer CPU Virtualization is not enabled")
-            print("#"*150)
-            pythoncom.CoUninitialize()
-            return False
-    pythoncom.CoUninitialize()
-    return None
 
 #######################################################################################################################
 # Format Drive D: / E: function
@@ -520,7 +485,7 @@ def _check_app(label_app_name,**kwargs):
                 log_app["Status"] = "NOT_INSTALLED"
                 log_app["Description"] = f"Error opening {label_app_name} : " + str(e)
 
-    if not check_with and label_app_name.lower() in instructions:
+    if not check_with and label_app_name.lower() in _instructions:
         print(Fore.CYAN + f"{label_app_name} is available in instructions. Trying to run the function...")
         try:
             # Get the module name (without .py extension)
