@@ -14,6 +14,7 @@ from functools import partial
 from scrape.json import read_json, write_json
 from scrape.module import check_required_modules
 from scrape.time import set_time
+from scrape.find.apps import find_installed_apps_by_wmi,find_installed_apps_by_registry,find_executable_on_path
 
 #######################################################################################################################
 # Bootstrap pip
@@ -93,68 +94,6 @@ from colorama import Fore, Style, init, Back
 
 init(autoreset=True)
  
- 
-#######################################################################################################################
-# Application functions (WMI)
-#######################################################################################################################
-def check_application_installed(app_name):
-    """Find installed applications and their install locations using WMI."""
-    # Initialize the WMI client
-    pythoncom.CoInitialize()
-    c = wmi.WMI()
-
-    # Initialize a dictionary to hold results
-    apps_info = {}
-
-    # Query for installed applications that match the specified name
-    query = f"SELECT * FROM Win32_Product WHERE Name LIKE '%{app_name}%'"
-    
-    for product in c.query(query):
-        display_name = product.Name
-        install_location = product.InstallLocation if product.InstallLocation else 'N/A'
-        apps_info[display_name] = install_location
-
-    pythoncom.CoUninitialize()
-    return apps_info
-
-import winreg
-import json
-
-def find_installed_apps_in_registry(app_name):
-    """Find installed applications and their install locations using the Windows Registry."""
-    # Registry paths to search
-    registry_paths = [
-        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
-        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wow6432Node"
-    ]
-    
-    # Initialize a dictionary to hold results
-    apps_info = {}
-
-    # Function to search a specific registry path
-    def search_registry(path):
-        try:
-            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path) as key:
-                for i in range(winreg.QueryInfoKey(key)[0]):
-                    subkey_name = winreg.EnumKey(key, i)
-                    with winreg.OpenKey(key, subkey_name) as subkey:
-                        try:
-                            display_name = winreg.QueryValueEx(subkey, 'DisplayName')[0]
-                            if app_name.lower() in display_name.lower():
-                                install_location = winreg.QueryValueEx(subkey, 'InstallLocation')[0] if winreg.QueryValueEx(subkey, 'InstallLocation')[0] else "N/A"
-                                apps_info[display_name] = install_location
-                        except FileNotFoundError:
-                            pass
-        except FileNotFoundError:
-            pass
-
-    # Search both registry paths
-    for registry_path in registry_paths:
-        search_registry(registry_path)
-
-    return apps_info
- 
- 
 def get_yes_or_no(prompt):
     while True:
         user_input = input(prompt).strip().lower()
@@ -166,14 +105,10 @@ def get_yes_or_no(prompt):
             print("Please enter 'y' for yes or 'n' for no.")
  
  
-import glob
 def open_application(executable_path,app_name):
-    search_pattern_exe = os.path.join(executable_path, f'{app_name}*.exe')
-    search_pattern_msi = os.path.join(executable_path, f'{app_name}*.msi')
-    exe_files = glob.glob(search_pattern_exe)
-    msi_files = glob.glob(search_pattern_msi)
+    result = find_executable_on_path(executable_path,app_name)
     
-    if not exe_files and not msi_files: 
+    if not result: 
         print(Fore.RED + f"No executable (MSI,EXE) files found for {app_name}. at {executable_path}")
         print(Back.MAGENTA + Fore.WHITE + "Please confirm the lines below (Cannot skiped in --dangerously-say-yes)")
         if get_yes_or_no("Open the installation path? (y,n)"):
@@ -183,10 +118,11 @@ def open_application(executable_path,app_name):
         get_yes_or_no("Is in the installation path have executable file and it run successfuly ? (y,n)")
         return None
     
-    for file in exe_files + msi_files:
-        if file and os.path.isfile(file):
-            proccess = subprocess.Popen(file)
-            return proccess
+    for exts in result:
+        for file in exts:
+            if file and os.path.isfile(file):
+                proccess = subprocess.Popen(file)
+                return proccess
 
     return None
  
@@ -509,7 +445,7 @@ def _check_app(label_app_name,**kwargs):
                 print(Back.YELLOW + Fore.BLACK + "Skiping 'CONSTANT CHECK' because error occured")
                 log_app['Description'] = log_app["Description"] + " - " + CONSTANT_CHECK[label_app_name]['message_fail']
         
-    if not check_with and (result := check_application_installed(label_app_name.replace("-", ""))) not in [None, {}]:
+    if not check_with and (result := find_installed_apps_by_wmi(label_app_name.replace("-", ""))) not in [None, {}]:
         print(Fore.CYAN + f"{label_app_name} is detected in WMI. Trying to open the application...")
         if all(value == "N/A" for value in result.values()):
             print(Fore.BLACK + Back.YELLOW + f"{label_app_name} found in WMI, But WMI cannot provide instalation path. Skiping WMI or try open it manualy")
@@ -546,7 +482,7 @@ def _check_app(label_app_name,**kwargs):
                 log_app["Status"] = "NOT_INSTALLED"
                 log_app["Description"] = log_app["Description"] + " - " + f"Error loading module: {e}"    
                             
-    if not check_with and (result := find_installed_apps_in_registry(label_app_name.replace("-", ""))) not in [None, {}] :
+    if not check_with and (result := find_installed_apps_by_registry(label_app_name.replace("-", ""))) not in [None, {}] :
         print(Fore.CYAN + f"{label_app_name} is detected in WMI. Trying to open the application...")
         if all(value == "N/A" for value in result.values()):
             print(Fore.BLACK + Back.YELLOW + f"{label_app_name} found in REGISTRY, But REGISTRY cannot provide instalation path. Skiping REGISTRY or try open it manualy")
@@ -1015,7 +951,7 @@ async def main():
         print(Fore.RED + Back.YELLOW + ">>> Dangerously say yes is enabled. Skipping confirmation prompts.")
     
     # Runt the host info function
-    if not SKIP_HOST_CHECK:
+    if not args.skip_host_check:
         await get_host_info()
  
     # Run the scraping function with command-line arguments
