@@ -1,2 +1,11 @@
 __pycache__
 *.pyc
+*.txt
+log.json
+*.exe
+*.msi
+*.zip
+*.tar.gz
+*.tgz
+*.log
+*.rar
