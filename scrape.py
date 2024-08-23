@@ -11,15 +11,7 @@ import threading
 import pythoncom
 
 from scrape.json import read_json, write_json
-
-#######################################################################################################################
-# Arg vars
-NO_CONFIRM = False
-SKIP_CHECKED = False
-SKIP_HOST_CHECK = False
-#######################################################################################################################
-
-
+from scrape.module import check_required_modules
 
 #######################################################################################################################
 # Bootstrap pip
@@ -37,7 +29,6 @@ if not pip_ready_to_use:
         sys.exit(1)
 
 
-            
 
 #######################################################################################################################
 # CONSTANT VARS
@@ -77,36 +68,8 @@ else:
     print(f"Instructions folder not found. Please create a folder named 'instructions' in the same directory as this script.")
     sys.exit(1)
 
-#######################################################################################################################
-# Check module function
-#######################################################################################################################
-def check_module_installed(module_name):
-    """Check if a module is installed by trying to import it."""
-    try:
-        importlib.import_module(module_name)
-        return True
-    except ImportError:
-        return False
-
-def install_module(module_name):
-    """Install a module using pip."""
-    try:
-        # Install the module using pip
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', module_name])
-        print(f"Module '{module_name}' has been successfully installed.")
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to install module '{module_name}': {e}")
-        sys.exit(1)
-        
-def check_required_modules():
-    for module_name in REQUIRED_MODULES:
-        if not check_module_installed(module_name):
-            print(f"Module '{module_name}' is not installed. Installing...")
-            install_module(module_name)
-    print("All required modules are installed.")
- 
+# Cheking required modules
 check_required_modules()
-
 
 #######################################################################################################################
 #Late module import
@@ -127,55 +90,6 @@ import platform
 from colorama import Fore, Style, init, Back
 
 init(autoreset=True)
-
-#######################################################################################################################
-# NTP Time functions
-#######################################################################################################################
-def get_ntp_time():
-    """Fetch the current time from an NTP server."""
-    client = ntplib.NTPClient()
-    response = client.request('pool.ntp.org')
-    return response.tx_time
-
-def set_system_time(new_time):
-    """Set the system time (requires administrative privileges)."""
-    formatted_time = new_time.strftime("%Y-%m-%d %H:%M:%S")
-    
-    if platform.system() == "Windows":
-        # Windows command to set the system time
-        date_cmd = new_time.strftime('Set-Date -Date "%m-%d-%Y %H:%M"')
-        result = subprocess.run(["powershell", "-Command", date_cmd])
-        if result.returncode != 0:
-            raise OSError("Failed to set system time")
-        else:
-            print(f"System time set to {formatted_time}")
-            return True
-    elif platform.system() == "Linux":
-        # Linux command to set the system time
-        try:
-            subprocess.run(['sudo', 'timedatectl', 'set-time', formatted_time], check=True)
-        except subprocess.CalledProcessError as e:
-            print(f"Error setting system time: {e}")
-    else:
-        raise OSError("Unsupported operating system")
-
-def set_time():
-    # Fetch current time from NTP server
-    ntp_time = get_ntp_time()
-
-    # Convert to UTC+7
-    utc = pytz.utc
-    local_tz = pytz.timezone('Asia/Bangkok')  # UTC+7 timezone
-    utc_time = datetime.utcfromtimestamp(ntp_time).replace(tzinfo=utc)
-    local_time = utc_time.astimezone(local_tz)
-
-    # Print the local time for verification
-    print(f"Current local time (UTC+7): {local_time.strftime('%Y-%m-%d %H:%M:%S')}")
-
-
-    # Set the system time
-    set_system_time(local_time)
-    # Set the system time
  
  
 #######################################################################################################################
