@@ -13,8 +13,6 @@ from tkinter import messagebox
 from datetime import datetime
 from functools import partial
 
-
-
 from scrape.json import read_json, write_json
 from scrape.module import check_required_modules
 from scrape.time import set_time
@@ -357,8 +355,7 @@ def chose_app_to_open(app_list):
 
 def _check_app(label_app_name,**kwargs):
     print(f"Running function check_app on thread: {threading.current_thread().name}")
-    
-
+    print(kwargs)
     if label_app_name in _json_log['APPLICATION-STATUS']:
         del _json_log['APPLICATION-STATUS'][label_app_name]
 
@@ -539,7 +536,7 @@ def _check_app(label_app_name,**kwargs):
 async def _check_applications(apps, **kwargs):
     print("Main thread :", threading.current_thread().name)
     
-    async def run_in_thread(label_app_name):
+    async def run_in_thread(label_app_name,**kwargs):
         from functools import partial
         loop = asyncio.get_running_loop()
         partial_func = partial(_check_app,label_app_name,**kwargs)
@@ -550,31 +547,31 @@ async def _check_applications(apps, **kwargs):
     print("Start checking each required app or tools.")
     print('-' * 150)
 
+    tasks = []
     checked_apps = [app for app in _json_log['APPLICATION-STATUS']]
     installed_apps = None
     
     if kwargs.get('skip_installed',False):
         installed_apps = [app for app in _json_log['APPLICATION-STATUS'] if _json_log['APPLICATION-STATUS'][app]['Status'] == 'INSTALLED']
     
-    if not kwargs.get('async',False):
-        for label_app_name in apps:
-            label_app_name = label_app_name.lower()
-            if kwargs.get('skip_checked',False) and label_app_name in checked_apps:
-                print(f"{label_app_name} has been checked before. Skipping...")
-                continue
-            if installed_apps and label_app_name in installed_apps:
-                print(f"{label_app_name} has been marked installed before. Skipping...")
-                continue
+    for label_app_name,requirement in zip(apps,kwargs.get('requirements')):
+        kwargs['requirement'] = requirement
+        label_app_name = label_app_name.lower()
+        
+        if kwargs.get('skip_checked',False) and label_app_name in checked_apps:
+            print(f"{label_app_name} has been checked before. Skipping...")
+            continue
+        if installed_apps and label_app_name in installed_apps:
+            print(f"{label_app_name} has been marked installed before. Skipping...")
+            continue
+        
+        if kwargs.get('async',False):
+            tasks.append(run_in_thread(label_app_name,**kwargs))
+        else:
             _check_app(label_app_name,**kwargs)
-        print('App cheking run syncronously, all apps checked.')
-    else:
-        print('App cheking run asyncronously, waiting for all tasks to complete...')
-        
-        apps = [label_app_name.lower() for label_app_name in apps]
-        apps = [label_app_name for label_app_name in apps if kwargs.get('skip_checked',False) and label_app_name not in checked_apps] if kwargs.get('skip_checked',False) else apps
-        apps = [label_app_name for label_app_name in apps if installed_apps and label_app_name not in installed_apps] if installed_apps else apps
-        
-        tasks = [run_in_thread(label_app_name) for label_app_name in apps]
+            
+
+    if kwargs.get('async',False):
         results = await asyncio.gather(*tasks)
             
     print('-' * 150)
@@ -597,7 +594,7 @@ async def _check_applications(apps, **kwargs):
 #######################################################################################################################
 #MAIN FUNCTION SCRAPE
 #######################################################################################################################
-
+import json
 async def _scrape(username, password, **kwargs):
  
  
@@ -683,8 +680,13 @@ async def _scrape(username, password, **kwargs):
  
  
         # Print the extracted text
-        labels = ['flutter-sdk',"visual-studio-code",'flutter-extension','virtualization','git', 'virtual-box', 'chrome']
-
+        labels = ['flutter-sdk={"target":null,"minimum":"1.19.2"}',"visual-studio-code",'flutter-extension','virtualization','git', 'virtual-box', 'chrome']
+        requirements = [ label.split('=')[1] if len(label.split("=")) == 2 else None for label in labels ]
+        labels = [ label.split("=")[0] for label in labels ]
+        requirements = [json.loads(requirement) if requirement else None for requirement in requirements]
+        
+        kwargs['requirements'] = requirements
+        
         print('-' * 150)
         print("Applications to check:")
         print('-' * 150)
