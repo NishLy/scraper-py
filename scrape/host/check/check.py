@@ -30,3 +30,16 @@ def check_virtualization():
             return False
     pythoncom.CoUninitialize()
     return None
+
+import subprocess
+#######################################################################################################################
+# Mouse and Keyboard functions
+#######################################################################################################################
+
+def check_mouse(keyboard_mouse_test_site: str):
+    print("Opening mouse test website...")
+    subprocess.run(['powershell', 'start', keyboard_mouse_test_site])
+    
+def check_keyboard(keyboard_mouse_test_site: str):
+    print("Opening keyboard test website...")
+    subprocess.run(['powershell', 'start', keyboard_mouse_test_site])

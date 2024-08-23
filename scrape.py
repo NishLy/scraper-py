@@ -17,7 +17,7 @@ from scrape.json import read_json, write_json
 from scrape.module import check_required_modules
 from scrape.time import set_time
 from scrape.find.apps import find_installed_apps_by_wmi,find_installed_apps_by_registry,find_executable_on_path
-from scrape.host.check import check_virtualization
+from scrape.host.check import check_virtualization,check_keyboard,check_mouse
 
 #######################################################################################################################
 # Bootstrap pip
@@ -80,11 +80,6 @@ check_required_modules(REQUIRED_MODULES)
 #Late module import
 #######################################################################################################################
 from colorama import Fore, Style, init, Back
-
-
-
-
-
 
 init(autoreset=True)
  
@@ -208,19 +203,6 @@ def show_confirmation_popup(message,**kwargs):
     return response.get()
 
 
-
-
-#######################################################################################################################
-# Mouse and Keyboard functions
-#######################################################################################################################
-
-def check_mouse():
-    print("Opening mouse test website...")
-    subprocess.run(['powershell', 'start', KEYBOARD_MOUSE_TEST_SITE])
-    
-def check_keyboard():
-    print("Opening keyboard test website...")
-    subprocess.run(['powershell', 'start', KEYBOARD_MOUSE_TEST_SITE])
     
     
 #######################################################################################################################
@@ -302,13 +284,13 @@ CONSTANT_CHECK = {
         "message_confirmation": "Do you want to set the Date & Time to UTC +7?"
     },
     "mouse": {
-        "function": check_mouse,
+        "function": partial(check_mouse,KEYBOARD_MOUSE_TEST_SITE),
         "message_success": "Mouse is working.",
         "message_fail": "Mouse is not working.",
         "message_confirmation": "Is the mouse working properly?"
     },
     "keyboard": {
-        "function": check_keyboard,
+        "function": partial(check_keyboard,KEYBOARD_MOUSE_TEST_SITE),
         "message_success": "Keyboard is working.",
         "message_fail": "Keyboard is not working.",
         "message_confirmation": "Is the keyboard working properly?"
