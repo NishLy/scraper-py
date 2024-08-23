@@ -9,9 +9,11 @@ import platform
 import traceback
 import threading
 import pythoncom
+from functools import partial
 
 from scrape.json import read_json, write_json
 from scrape.module import check_required_modules
+from scrape.time import set_time
 
 #######################################################################################################################
 # Bootstrap pip
@@ -389,9 +391,11 @@ def check_vscode_installed():
 #CONSTANT VALUE //Start
 #######################################################################################################################
 
+
+
 CONSTANT_CHECK = {
     "date-time": {
-        "function": set_time,
+        "function": partial(set_time,"Asia/Bangkok"),
        " message_success": "Date & Time has been set successfully.",
         "message_fail": "Date & Time has not been set.",
         "message_confirmation": "Do you want to set the Date & Time to UTC +7?"
