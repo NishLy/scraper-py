@@ -100,15 +100,18 @@ def open_application(executable_path,app_name):
     if not result: 
         print(Fore.RED + f"No executable (MSI,EXE) files found for {app_name}. at {executable_path}")
         print(Back.MAGENTA + Fore.WHITE + "Please confirm the lines below (Cannot skiped in --dangerously-say-yes)")
+        
         if get_yes_or_no("Open the installation path? (y,n)"):
             subprocess.run(
             ['powershell', '-NoProfile', '-Command',f'explorer {executable_path}'], shell=True,check=True
         )
+
         get_yes_or_no("Is in the installation path have executable file and it run successfuly ? (y,n)")
         return None
 
     if len(result) > 1:
         print(Fore.MAGENTA + f"Multiple executable found path '{app_name}'. Please select one" )
+        
         dict = {}
         for path in result:
             dict[path] = path
@@ -135,7 +138,7 @@ def show_info_popup(message):
  
  
 def show_warning_popup(message):
- 
+    
     root = tk.Tk()
  
     root.withdraw()  # Hide the root window
@@ -146,6 +149,7 @@ def show_warning_popup(message):
  
  
 def show_confirmation_popup(message,**kwargs):
+    
     if kwargs.get("no_confirm",False):
         if kwargs.get("evaluate",False):
             print(Fore.WHITE + Back.CYAN + f">>> Confirmation Protocol Skiped. Return evaluation is {Fore.WHITE + Back.GREEN}True")
@@ -194,8 +198,10 @@ def show_confirmation_popup(message,**kwargs):
     messagebox.update_idletasks()
     width = messagebox.winfo_width()
     height = messagebox.winfo_height()
+    
     x = (messagebox.winfo_screenwidth() // 2) - (width // 2)
     y = (messagebox.winfo_screenheight() // 2) - (height // 2)
+    
     messagebox.geometry(f"{width}x{height}+{x}+{y}")
 
     # Wait for the user to close the message box
@@ -329,6 +335,25 @@ CONSTANT_CHECK = {
 # Application Check
 #######################################################################################################################
 
+def _handle_requirement(app_name,requirement,curent_version):
+    try:
+        if not requirement:
+            return True
+        
+        print("Requirement are declarad, Try to match {app_name} requirement")
+        
+        if requirement['target'] != None and requirement['target'] == curent_version:
+            print("Requirement target does not match do you want to unistall it?")
+            get_yes_or_no("Please enter (y/n) : ")
+        
+        if requirement['target'] == None and requirement['minimum'] <= curent_version:
+            print("Requirement minimum are fullfiled, and continue checking sequence")
+            return True
+            
+    finally :
+        print("Something error in requirement type. deciding to continue checking without requirement")  
+        return False
+
 
 def chose_app_to_open(app_list):
     for i,app in enumerate(app_list):
@@ -355,7 +380,7 @@ def chose_app_to_open(app_list):
 
 def _check_app(label_app_name,**kwargs):
     print(f"Running function check_app on thread: {threading.current_thread().name}")
-    print(kwargs)
+    
     if label_app_name in _json_log['APPLICATION-STATUS']:
         del _json_log['APPLICATION-STATUS'][label_app_name]
 
@@ -371,10 +396,11 @@ def _check_app(label_app_name,**kwargs):
 
     start_time = time.time()
     check_with = None
-
+    
     if label_app_name in CONSTANT_CHECK:
         try:
             print(Fore.CYAN + f"{label_app_name} is available in CONSTANT_CHECK. Trying to run the function...")
+            
             evaluate = CONSTANT_CHECK[label_app_name]['function']()
             if show_confirmation_popup(CONSTANT_CHECK[label_app_name]['message_confirmation'],no_confirm=kwargs.get("dangerously_say_yes",False),evaluate=evaluate):
                 print(Fore.YELLOW + f">>> CALLBACK-MESSAGE : {CONSTANT_CHECK[label_app_name]['message_success']}")
@@ -387,6 +413,7 @@ def _check_app(label_app_name,**kwargs):
             if evaluate and type(evaluate) == subprocess.Popen:
                 evaluate.kill()
             check_with = "CONSTANT_CHECK"
+            
         except Exception as e:
                 print(Back.RED + Fore.WHITE + f"CALLBACK-MESSAGE : {CONSTANT_CHECK[label_app_name]['message_fail']}")
                 print(Back.YELLOW + Fore.BLACK + "Skiping 'CONSTANT CHECK' because error occured")
@@ -423,6 +450,7 @@ def _check_app(label_app_name,**kwargs):
                 if evaluate and type(evaluate) == subprocess.Popen:
                     evaluate.terminate()
                 check_with = "WMI"
+                
             except Exception as e:
                 print(Back.RED + Fore.WHITE + f"Error open {label_app_name} with WMI : {e}")
                 print(Back.YELLOW + Fore.BACK + "Skiping 'WMI' because error occured")
