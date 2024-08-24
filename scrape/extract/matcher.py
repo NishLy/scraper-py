@@ -9,3 +9,4 @@ def extract_words_by_pattern(string: str, pattern: str) -> str:
     if not matches:
         raise ValueError("No matches found")
     return matches
+
