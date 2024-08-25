@@ -77,12 +77,14 @@ def main(requirement: dict[str,str])-> Response:
    
     try:
         os.makedirs(os.path.dirname(DOWNLOAD_SAVE_PATH), exist_ok=True)
-        if not download_and_save_file(RESOURE_SOURCE_URL, os.path.join(DOWNLOAD_SAVE_PATH, FILE_NAME)):
-            return Response(
-                status=False,
-                message="Failed to download WinRar",
-                data={}
-            )
+        
+        if not os.path.exists(os.path.join(DOWNLOAD_SAVE_PATH, FILE_NAME)):
+            if not download_and_save_file(RESOURE_SOURCE_URL, os.path.join(DOWNLOAD_SAVE_PATH, FILE_NAME)):
+                return Response(
+                    status=False,
+                    message="Failed to download WinRar",
+                    data={}
+                )
             
         if not os.path.exists(os.path.join(DOWNLOAD_SAVE_PATH, FILE_NAME)):
             return Response(
