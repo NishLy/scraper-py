@@ -41,7 +41,7 @@ if not pip_ready_to_use:
 PATH_TO_JSON_LOG = os.curdir + '/log.json'
 PATH_INSTRUCTIONS = os.curdir + '/instructions'
 KEYBOARD_MOUSE_TEST_SITE = 'https://en.kFey-test.ru/'
-REQUIRED_MODULES = ['setuptools','pyppeteer','wmi','pywintypes','pytz','ntplib','platform','psutil','GPUtil','pyperclip','colorama','tabulate']
+REQUIRED_MODULES = ['setuptools','pyppeteer','wmi','pywintypes','pytz','ntplib','platform','psutil','GPUtil','pyperclip','colorama','tabulate','pyunpack', 'patool']
 #######################################################################################################################
 
 #######################################################################################################################
