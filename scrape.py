@@ -514,16 +514,17 @@ def _check_app(label_app_name,**kwargs):
             spec.loader.exec_module(module)
             
             if hasattr(module, 'main'):
+                requirement = kwargs.get("requirement") if kwargs.get("requirement") else {"target":None,"minimum":None}
                 
-                evaluate = module.main(kwargs.get('requirement',{'target':None,'minimum':None}))
+                evaluate = module.main(requirement)
         
                 if not kwargs.get("no_confirm",False):
-                    if evaluate:
+                    if evaluate['status']:
                         print(Fore.YELLOW + f"{label_app_name} is working?. Instruction result -> {evaluate['message']}")
                     else:
                         print(Fore.YELLOW + f"{label_app_name} is not working?. Instruction result -> {evaluate['message']}")
                         
-                if show_confirmation_popup(f"Instruction has been executed, Did {label_app_name} work successfully?",no_confirm=kwargs.get("dangerously_say_yes",False),evaluate=evaluate):
+                if show_confirmation_popup(f"Instruction has been executed, Did {label_app_name} work successfully?",no_confirm=kwargs.get("dangerously_say_yes",False),evaluate=evaluate['status']):
                     print(Fore.GREEN + f">>> {label_app_name} is working. Marked as installed.")
                     log_app["Status"] = "INSTALLED"
                     log_app["Description"] = f"{evaluate}"

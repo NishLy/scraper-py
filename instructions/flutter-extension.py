@@ -11,9 +11,9 @@ def main(requirements: dict[str, str]):
         output = run_powershell_with_text_output(VSC_SHOW_EXTENSIONS_COMMAND)
         
         if output['stderr']:
-            print("An error occurred:", output['stderr'], "Assuming Flutter is not installed. And trying to download it.")
+            print("An error occurred:", output['stderr'], "Failed to run the command. Assuming Visual Studio Code is not installed.")
+            continue
         
-            
         result = extract_words_by_pattern(output["stdout"], VSC_EXTENSION_PATTERN)
         
         if not result:
@@ -28,6 +28,7 @@ def main(requirements: dict[str, str]):
             if extension not in VSC_EXTENSION_TO_INSTALL:
                 continue    
             
+            print(requirements,version,extension)
             if compare_app_version(version, requirements, f"{extension}")["status"]:
                 print(f'{extension} version is correct')
                 list_of_installed_extensions.append(extension)
@@ -35,13 +36,12 @@ def main(requirements: dict[str, str]):
         if len(list_of_installed_extensions) == len(VSC_EXTENSION_TO_INSTALL):
             return Response(True, "All extensions are installed")
 
-        print(list_of_installed_extensions)        
         print("Some extensions are not installed, Trying to install the missing ones.")
         
         for extension in VSC_EXTENSION_TO_INSTALL:
             if extension not in list_of_installed_extensions:
                 print(f"Trying to install {extension}")
-                command = f"{VSC_INSTALL_EXTENSION_COMMAND} {extension}"
+                command = f"{VSC_INSTALL_EXTENSION_COMMAND} {extension.split('.')[1]}"
                 output = run_powershell_with_text_output(command)
                 if output['stderr']:
                     print("An error occurred:", output['stderr'], f"Assuming {extension} is not installed. Trying to install it once again.")
