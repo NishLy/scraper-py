@@ -1,47 +1,57 @@
-import subprocess
-import sys
+from scrape.runner.powershell import run_powershell_with_text_output
+from scrape.text import extract_words_by_pattern,VSC_EXTENSION_PATTERN
+from scrape.instruction import Response,compare_app_version
+from scrape.utils import download_and_save_file,extract_file,add_to_windows_path,remove_from_windows_path
+from scrape.command import VSC_SHOW_EXTENSIONS_COMMAND,VSC_INSTALL_EXTENSION_COMMAND
+
+VSC_EXTENSION_TO_INSTALL = ["code.dart","code.flutter"]
+
+def main(requirements: dict[str, str]):
+    for i in range(0,1):
+        output = run_powershell_with_text_output(VSC_SHOW_EXTENSIONS_COMMAND)
+        
+        if output['stderr']:
+            print("An error occurred:", output['stderr'], "Assuming Flutter is not installed. And trying to download it.")
+        
+            
+        result = extract_words_by_pattern(output["stdout"], VSC_EXTENSION_PATTERN)
+        
+        if not result:
+            return Response(False, "Failed to extract version")
+
+        list_of_installed_extensions = []
+        
+        for i in range(0, len(result), 2):
+            extension = result[i]
+            version = result[i + 1]
+            
+            if extension not in VSC_EXTENSION_TO_INSTALL:
+                continue    
+            
+            if compare_app_version(version, requirements, f"{extension}")["status"]:
+                print(f'{extension} version is correct')
+                list_of_installed_extensions.append(extension)
+        
+        if len(list_of_installed_extensions) == len(VSC_EXTENSION_TO_INSTALL):
+            return Response(True, "All extensions are installed")
+
+        print(list_of_installed_extensions)        
+        print("Some extensions are not installed, Trying to install the missing ones.")
+        
+        for extension in VSC_EXTENSION_TO_INSTALL:
+            if extension not in list_of_installed_extensions:
+                print(f"Trying to install {extension}")
+                command = f"{VSC_INSTALL_EXTENSION_COMMAND} {extension}"
+                output = run_powershell_with_text_output(command)
+                if output['stderr']:
+                    print("An error occurred:", output['stderr'], f"Assuming {extension} is not installed. Trying to install it once again.")
+                    continue
+                
+                print(f"Extension {extension} is installed")
+   
+            
+    return Response(False, "Partial or no extensions are installed")
 
 
-def check_flutter_extension_installed():
-    try:
-        # Define file paths for output and error logs
-        output_file = 'vscode_extensions_output.txt'
-        error_file = 'vscode_extensions_error.txt'
-
-        # PowerShell command to list installed extensions
-        ps_command = (
-            'Start-Process powershell -ArgumentList "code --list-extensions" '
-            '-NoNewWindow -Wait -RedirectStandardOutput ' + output_file + ' -RedirectStandardError ' + error_file
-        )
-
-        # Run the PowerShell command
-        subprocess.run(['powershell', '-NoProfile', '-Command', ps_command], shell=True, check=True)
-
-        # Read output from the files with UTF-8 encoding
-        with open(output_file, 'r', encoding='utf-8') as f:
-            output = f.read()
-        with open(error_file, 'r', encoding='utf-8') as f:
-            error = f.read()
-
-        # Define the Flutter extension ID
-        flutter_extension_id = 'dart-code.flutter'
-
-        # Check if the Flutter extension ID is in the list of installed extensions
-        if flutter_extension_id in output:
-            print("Flutter extension is installed.")
-            print(f"Output:\n{output}")
-            print(f"Error:\n{error}")
-            return True
-        else:
-            print("Flutter extension is not installed.")
-            print(f"Output:\n{output}")
-            print(f"Error:\n{error}")
-            return False
-
-    except Exception as e:
-        print(f"Error checking Flutter extension installation: {e}")
-        return False
-    
-def main():
-    return check_flutter_extension_installed()
-    
+if __name__ == "__main__":
+    print(main({"target": None, "minimum": "1.0.0"}))

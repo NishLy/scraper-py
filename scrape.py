@@ -327,7 +327,13 @@ CONSTANT_CHECK = {
         "message_success": "Visual Studio Code is installed.",
         "message_fail": "Visual Studio Code is not installed.",
         "message_confirmation": "Is Visual Studio Code installed?"
-    }
+    },
+    "python": {
+        "function": lambda: subprocess.Popen(["python", "--version"]),
+        "message_success": "Python is installed.",
+        "message_fail": "Python is not installed.",
+        "message_confirmation": "Is Python installed?"
+    },
 }
 
 
@@ -509,13 +515,14 @@ def _check_app(label_app_name,**kwargs):
             
             if hasattr(module, 'main'):
                 
-                evaluate = module.main()
+                evaluate = module.main(kwargs.get('requirement',{'target':None,'minimum':None}))
         
                 if not kwargs.get("no_confirm",False):
                     if evaluate:
-                        print(Fore.YELLOW + f"{label_app_name} is working?. Executed instruction Is returning True")
+                        print(Fore.YELLOW + f"{label_app_name} is working?. Instruction result -> {evaluate['message']}")
                     else:
-                        print(Fore.YELLOW + f"{label_app_name} is not working?. Executed instruction Is returning False")
+                        print(Fore.YELLOW + f"{label_app_name} is not working?. Instruction result -> {evaluate['message']}")
+                        
                 if show_confirmation_popup(f"Instruction has been executed, Did {label_app_name} work successfully?",no_confirm=kwargs.get("dangerously_say_yes",False),evaluate=evaluate):
                     print(Fore.GREEN + f">>> {label_app_name} is working. Marked as installed.")
                     log_app["Status"] = "INSTALLED"

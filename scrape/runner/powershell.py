@@ -25,3 +25,4 @@ def run_powershell_with_text_output(command: str) -> Dict[str, str]:
             "stdout": None,
             "stderr": error_message
         }
+        
