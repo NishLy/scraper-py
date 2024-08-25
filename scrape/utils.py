@@ -35,7 +35,7 @@ def download_and_save_file(url, destination)->bool:
                 return True
         
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"Error on download : {e}")
         return False
     
 
@@ -50,7 +50,7 @@ def print_progress_bar(completed, total, bar_length=50):
     progress = (completed / total)
     filled_length = int(bar_length * progress)
     bar = '█' * filled_length + '-' * (bar_length - filled_length)
-    sys.stdout.write(f"\r[{bar}] {progress * 100:.2f}% Complete")
+    sys.stdout.write(f"\r[{bar}] {progress * 100:.2f}% {completed/1000000} MB /{total/1000000} MB")
     sys.stdout.flush()
 
 def extract_file(file_path, extract_to)->bool:

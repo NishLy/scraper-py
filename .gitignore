@@ -9,3 +9,5 @@ log.json
 *.tgz
 *.log
 *.rar
+
+.venv
