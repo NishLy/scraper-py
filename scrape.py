@@ -95,6 +95,8 @@ def get_yes_or_no(prompt):
  
  
 def open_application(executable_path,app_name):
+    print(Fore.CYAN + f"Opening {app_name} at {executable_path}")
+    
     result = find_executable_on_path(executable_path,app_name)
     
     if not result: 
@@ -116,11 +118,11 @@ def open_application(executable_path,app_name):
         for path in result:
             dict[path] = path
         key = chose_app_to_open(dict)
-        return subprocess.Popen([dict[key]])
         
-
-    return None
- 
+        return subprocess.Popen([dict[key]])
+    
+    return subprocess.Popen([result[0]])
+        
  
 #######################################################################################################################
 # Popup functions
@@ -167,7 +169,7 @@ def show_confirmation_popup(message,**kwargs):
     messagebox.attributes("-topmost", True)  # Keep the message box on top
 
     # Set the message box size and position
-    messagebox.geometry("600x150")  # Increase width, reduce height
+    messagebox.geometry("600x100")  # Increase width, reduce height
     messagebox.resizable(False, False)
 
     # Create and pack the message label
@@ -464,7 +466,7 @@ def _check_app(label_app_name,**kwargs):
                 log_app["Description"] = log_app["Description"] + " - " + f"Error loading module: {e}"    
                             
     if not check_with and (result := find_installed_apps_by_registry(label_app_name.replace("-", ""))) not in [None, {}] :
-        print(Fore.CYAN + f"{label_app_name} is detected in WMI. Trying to open the application...")
+        print(Fore.CYAN + f"{label_app_name} is detected in REGISTRY. Trying to open the application...")
         if all(value == "N/A" for value in result.values()):
             print(Fore.BLACK + Back.YELLOW + f"{label_app_name} found in REGISTRY, But REGISTRY cannot provide instalation path. Skiping REGISTRY or try open it manualy")
             log_app["Description"] = log_app["Description"] + " - " + f"{label_app_name} found in REGISTRY, But REGISTRY cannot provide instalation path."
@@ -527,11 +529,11 @@ def _check_app(label_app_name,**kwargs):
                 if show_confirmation_popup(f"Instruction has been executed, Did {label_app_name} work successfully?",no_confirm=kwargs.get("dangerously_say_yes",False),evaluate=evaluate['status']):
                     print(Fore.GREEN + f">>> {label_app_name} is working. Marked as installed.")
                     log_app["Status"] = "INSTALLED"
-                    log_app["Description"] = f"{evaluate}"
+                    log_app["Description"] = f"{evaluate['message']}"
                 else:       
                     print(Fore.RED + f">>> {label_app_name} is not working. Marked as not installed.")
                     log_app["Status"] = "NOT_INSTALLED"
-                    log_app["Description"] =  f"{evaluate}"
+                    log_app["Description"] =  f"{evaluate['message']}"
                 check_with = "INSTRUCTION"
                 
             else:
@@ -579,9 +581,9 @@ async def _check_applications(apps, **kwargs):
         result = await loop.run_in_executor(None,partial_func)
         return result
     
-    print('-' * 150)
+    print('-' * 100)
     print("Start checking each required app or tools.")
-    print('-' * 150)
+    print('-' * 100)
 
     tasks = []
     checked_apps = [app for app in _json_log['APPLICATION-STATUS']]
@@ -610,20 +612,20 @@ async def _check_applications(apps, **kwargs):
     if kwargs.get('async',False):
         results = await asyncio.gather(*tasks)
             
-    print('-' * 150)
+    print('-' * 100)
     print("Cheking apps completed.")
-    print('-' * 150)
+    print('-' * 100)
         
-    print("-" * 150)
+    print("-" * 100)
     print("CHECK SUMMARY")
-    print("-"*150)
+    print("-"*100)
 
     for i,app in enumerate(_json_log['APPLICATION-STATUS']):
         print(f"{i}. {app} : {_json_log['APPLICATION-STATUS'][app]['Status']}")
         print(f"Description : {_json_log['APPLICATION-STATUS'][app]['Description']}")
         print(f"Check Duration : {_json_log['APPLICATION-STATUS'][app]['Check_Time']} seconds")
         print(f"Check with : {_json_log['APPLICATION-STATUS'][app]['Check_with']}")
-        print("-"*150)
+        print("-"*100)
     
 
 
@@ -716,16 +718,16 @@ async def _scrape(username, password, **kwargs):
  
  
         # Print the extracted text
-        labels = ['flutter-sdk={"target":null,"minimum":"1.19.2"}',"visual-studio-code",'flutter-extension','virtualization','git', 'virtual-box', 'chrome']
+        labels = ['winrar','flutter-sdk={"target":null,"minimum":"1.19.2"}',"visual-studio-code",'flutter-extension','virtualization','git', 'virtual-box', 'chrome']
         requirements = [ label.split('=')[1] if len(label.split("=")) == 2 else None for label in labels ]
         labels = [ label.split("=")[0] for label in labels ]
         requirements = [json.loads(requirement) if requirement else None for requirement in requirements]
         
         kwargs['requirements'] = requirements
         
-        print('-' * 150)
+        print('-' * 100)
         print("Applications to check:")
-        print('-' * 150)
+        print('-' * 100)
         
         for label in labels:
             print(f"- {label}")
@@ -836,5 +838,6 @@ async def main():
 
 if __name__ == '__main__':
     asyncio.run(main())
+    input("Press Enter to exit...")
    
  
