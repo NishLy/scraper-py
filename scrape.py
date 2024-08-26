@@ -46,10 +46,10 @@ if not pip_ready_to_use:
 
 #######################################################################################################################
 # CONSTANT VARS
-INVENT_URL_FORM = 'http://127.0.0.1:5000/index.html'
-INVENT_URL_LOGIN = 'http://127.0.0.1:5000/login.html'
-CEKSOFT_URL_LOGIN = 'http://127.0.0.1:500/ceksoft/login.php'
-CEKSOFT_URL_FORM = 'http://127.0.0.1:5000/ceksoft'
+INVENT_URL_FORM = 'http://127.0.0.1:5500/index.html'
+INVENT_URL_LOGIN = 'http://127.0.0.1:5500/login.html'
+CEKSOFT_URL_LOGIN = 'http://127.0.0.1:5500/ceksoft/login.php'
+CEKSOFT_URL_FORM = 'http://127.0.0.1:5500/ceksoft'
 PATH_TO_JSON_LOG = os.curdir + '/log.json'
 PATH_INSTRUCTIONS = os.curdir + '/instructions'
 KEYBOARD_MOUSE_TEST_SITE = 'https://en.kFey-test.ru/'
@@ -772,66 +772,57 @@ async def get_host_info():
     
  
 async def _send_report_invent(invent:dict,**kwargs):
-
-    # # Launch a new browser instance
-
     browser = await launch(headless=False,timeout=60000)
+    try:
+        page = await browser.newPage()
 
-    page = await browser.newPage()
+        await page.goto(INVENT_URL_FORM)
+        
+        await page.waitForSelector('.form-horizontal')
+        
+        await page.evaluate('document.querySelector(".form-horizontal").reset()')
+        
+        await page.type('[name="nm_brg"]', invent['HOST']['PC-NAME'])  
+        
+        await page.type('[name="jumlah"]', '1')  
+        
+        await page.type('[name="posisi"]', kwargs.get("pc_position") if kwargs.get("pc_position") else "N/A")
+        
+        await page.type('[name="processor"]', invent['HOST-SPECS']['CPU'][0]['Name'])  
+        
+        await page.type('[name="motherboard"]', invent['HOST-SPECS']['Motherboard'][0]['Manufacturer'] + " " + invent['HOST-SPECS']['Motherboard'][0]['Model'])
+        
+        await page.type('[name="hdd"]', invent['HOST-SPECS']['Disk'][0]['Model'] + " " + invent['HOST-SPECS']['Disk'][0]['Size (GB)'])
+        
+        await page.type('[name="ram1"]', invent['HOST-SPECS']['RAM'][0]['Type'] + " " + invent['HOST-SPECS']['RAM'][0]['Size (GB)']) 
+        
+        await page.type('[name="ram1"]', invent['HOST-SPECS']['RAM'][1]['Type'] + " " + invent['HOST-SPECS']['RAM'][1]['Size (GB)'] if len(invent['HOST-SPECS']['RAM']) > 1 else "N/A")
 
-    await page.goto(INVENT_URL_LOGIN)
-    
-    await page.waitForNavigation() 
-    
-    await page.type('[name="nm_brg"]', invent['HOST']['PC-NAME'])  
-    
-    await page.type('[name="jumlah"]', '1')  
-    
-    await page.type('[name="posisi"]', kwargs.get("pc_position","N/A"))  
-    
-    await page.type('[name="processor"]', invent['HOST-SPECS']['CPU']['Name'])  
-    
-    await page.type('[name="motherboard"]', invent['HOST-SPECS']['Motherboard']['Manufacturer'] + " " + invent['HOST-SPECS']['Motherboard']['Model'])
-    
-    await page.type('[name="hdd"]', invent['HOST-SPECS']['Disk'][0]['Model'] + " " + invent['HOST-SPECS']['Disk'][0]['Size (GB)'])
-    
-    await page.type('[name="ram1"]', invent['HOST-SPECS']['RAM'][0]['Type'] + " " + invent['HOST-SPECS']['RAM'][0]['Size (GB)']) 
-    
-    await page.type('[name="ram1"]', invent['HOST-SPECS']['RAM'][1]['Type'] + " " + invent['HOST-SPECS']['RAM'][1]['Size (GB)'] if len(invent['HOST-SPECS']['RAM']) > 1 else "N/A")
-
-    await page.type('[name="vga"]', invent['HOST-SPECS']['GPU'][0]['Name'] + " " + invent['HOST-SPECS']['GPU'][0]['Memory (GB)'])
-    
-    await page.type('[name="cardlan"]', invent['HOST-SPECS']['Network'][0]['Description'] + " " + invent['HOST-SPECS']['Network'][0]['MACAddress'])    
-    
-    await page.type('[name="tanggal_inven"]', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        await page.type('[name="vga"]', invent['HOST-SPECS']['GPU'][0]['Name'] + " " + str(invent['HOST-SPECS']['GPU'][0]['VRAM (GB)']))
+        
+        await page.type('[name="cardlan"]', invent['HOST-SPECS']['Network'][0]['Description'] + " " + invent['HOST-SPECS']['Network'][0]['MACAddress'])    
+        
+        await page.type('[name="tanggal_inven"]', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        
+    finally:
+        await browser.close()
+        
        
 
 
   
 async def main():
- 
+    # Parsing arguments
     parser = argparse.ArgumentParser(description='Login and scrape data using Pyppeteer.')
- 
     parser.add_argument('--username', required=False, help='The username for login')
- 
     parser.add_argument('--password', required=False, help='The password for login')
-    
     parser.add_argument('--dangerously-say-yes', action='store_true', help='Skip confirmation prompts')
-    
     parser.add_argument('--skip-checked', action='store_true', help='Skip checked applications')
-    
     parser.add_argument('--skip-host-check', action='store_true', help='Skip host information retrieval')
-    
-    parser.add_argument('--skip-installed',
-                        action='store_true',
-                        help='Skip checking installed applications')
-    
+    parser.add_argument('--skip-installed', action='store_true', help='Skip checking installed applications')
     parser.add_argument('--async', action='store_true', help='Run application checks asynchronously')
-    
     parser.add_argument('--skip-send-report', action='store_true', help='Skip sending the report')
-    
     parser.add_argument('--pc-position', required=False, help='The position of the device')
-    
     args = parser.parse_args()
 
     _json_log['ARGS'] = vars(args)
@@ -839,40 +830,42 @@ async def main():
     if args.dangerously_say_yes:
         print(Fore.RED + Back.YELLOW + ">>> Dangerously say yes is enabled. Skipping confirmation prompts.")
     
-    # Runt the host info function
+    # Running host info function
     if not args.skip_host_check:
         await get_host_info()
- 
+
     # Run the scraping function with command-line arguments
     await _scrape(**vars(args))
-    
+
+    # Print host information
     print("-" * 100)
-    print("Host Infomation")
-    print("-"*100)
-    
+    print("Host Information")
+    print("-" * 100)
+
     for segment in _json_log['HOST-SPECS']:
         print(f"{segment} Information\n")
-        for i,device in enumerate(_json_log['HOST-SPECS'][segment]):
+        for i, device in enumerate(_json_log['HOST-SPECS'][segment]):
             print(f" {segment} {i}")
             for key in device:
                 print(f" {key} : {device[key]}")
             print()
-       
-        print("-"*100)
-        
-    print("-"*100)
+        print("-" * 100)
+
+    # Print application status
+    print("-" * 100)
     print("Apps Status")
-    print("-"*100)
-        
-    for i,app in enumerate(_json_log['APPLICATION-STATUS']):
+    print("-" * 100)
+
+    for i, app in enumerate(_json_log['APPLICATION-STATUS']):
         print(f"{i}. {app} : {_json_log['APPLICATION-STATUS'][app]['Status']}")
         print(f"Description : {_json_log['APPLICATION-STATUS'][app]['Description']}")
         print(f"Check Duration : {_json_log['APPLICATION-STATUS'][app]['Check_Time']} seconds")
         print(f"Check with : {_json_log['APPLICATION-STATUS'][app]['Check_with']}")
-        print("-"*100)
-        
+        print("-" * 100)
+
+    # Sending the report if required
     if not args.skip_send_report:
-       await _send_report_invent(_json_log,**vars(args))
+        await _send_report_invent(_json_log, **vars(args))
  
 
 if __name__ == '__main__':

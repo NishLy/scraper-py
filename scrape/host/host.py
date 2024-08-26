@@ -22,17 +22,6 @@ def get_cpu_info():
             "L3 Cache Size (KB)": processor.L3CacheSize,
             "Virtualization": "Enabled" if processor.VirtualizationFirmwareEnabled else "Disabled",
             "Hyper-Threading": "Enabled" if processor.SecondLevelAddressTranslationExtensions else "Disabled",
-            "VT-x": "Enabled" if processor.VtxSupport else "Disabled",
-            "VT-d": "Enabled" if processor.VtdSupport else "Disabled",
-            "AES": "Enabled" if processor.AESEnabled else "Disabled",
-            "NX": "Enabled" if processor.ExecuteDisableBitAvailable else "Disabled",
-            "SSE": "Enabled" if processor.DataExecutionPrevention_Available else "Disabled",
-            "SSE2": "Enabled" if processor.DataExecutionPrevention_SupportPolicy else "Disabled",
-            "SSE3": "Enabled" if processor.DataExecutionPrevention_32BitApplications else "Disabled",
-            "SSSE3": "Enabled" if processor.DataExecutionPrevention_Drivers else "Disabled",
-            "SSE4_1": "Enabled" if processor.DataExecutionPrevention_SecuritySupport else "Disabled",
-            "SSE4_2": "Enabled" if processor.DataExecutionPrevention_Permanent else "Disabled",
-            "AVX": "Enabled" if processor.DataExecutionPrevention_Enforcement else "Disabled",
         }
         cpu_list.append(cpu_info)
     return cpu_list
@@ -192,7 +181,6 @@ def get_motherboard_info():
             "Model": board.Product,
             "Serial Number": board.SerialNumber,
             "Version": board.Version,
-            "Asset Tag": board.AssetTag,
         }
         motherboard_info.append(info)
     
