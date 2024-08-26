@@ -11,3 +11,5 @@ log.json
 *.rar
 
 .venv
+
+*.html

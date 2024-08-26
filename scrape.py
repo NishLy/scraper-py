@@ -20,6 +20,13 @@ from scrape.find.apps import find_installed_apps_by_wmi,find_installed_apps_by_r
 from scrape.host.check import check_virtualization,check_keyboard,check_mouse
 
 #######################################################################################################################
+# ENV SET / IF FAIL USE POWERSHEL TEMP ENV CHANGE
+#######################################################################################################################
+
+PYPPETEER_CHROMIUM_REVISION = '1263111' # Chromium revision used by pyppeteer
+os.environ['PYPPETEER_CHROMIUM_REVISION'] = PYPPETEER_CHROMIUM_REVISION
+
+#######################################################################################################################
 # Bootstrap pip
 #######################################################################################################################
 
@@ -33,11 +40,16 @@ if not pip_ready_to_use:
     except subprocess.CalledProcessError as e:
         print(f"Failed to install pip: {e}")
         sys.exit(1)
-
+        
+        
 
 
 #######################################################################################################################
 # CONSTANT VARS
+INVENT_URL_FORM = 'http://127.0.0.1:5000/index.html'
+INVENT_URL_LOGIN = 'http://127.0.0.1:5000/login.html'
+CEKSOFT_URL_LOGIN = 'http://127.0.0.1:500/ceksoft/login.php'
+CEKSOFT_URL_FORM = 'http://127.0.0.1:5000/ceksoft'
 PATH_TO_JSON_LOG = os.curdir + '/log.json'
 PATH_INSTRUCTIONS = os.curdir + '/instructions'
 KEYBOARD_MOUSE_TEST_SITE = 'https://en.kFey-test.ru/'
@@ -47,7 +59,6 @@ REQUIRED_MODULES = ['setuptools','pyppeteer','wmi','pywintypes','pytz','ntplib',
 #######################################################################################################################
 # Loaded variable
 #######################################################################################################################
-
 
 _json_log = read_json(PATH_TO_JSON_LOG) if os.path.exists(PATH_TO_JSON_LOG) else {
     "Description": "This is a log file for the host information and the application status.",
@@ -59,9 +70,11 @@ _json_log = read_json(PATH_TO_JSON_LOG) if os.path.exists(PATH_TO_JSON_LOG) else
         "OS-ARCHITECTURE": platform.architecture(),
     },
     "HOST-SPECS":{},
-    "APPLICATION-STATUS": {}
+    "APPLICATION-STATUS": {},
+    "ARGS": {}
 }
 
+# Loaded available instructions
 _instructions = []
 if os.path.exists(PATH_INSTRUCTIONS):
     for file in os.listdir(PATH_INSTRUCTIONS):
@@ -125,7 +138,7 @@ def open_application(executable_path,app_name):
         
  
 #######################################################################################################################
-# Popup functions
+# Gui Functions
 #######################################################################################################################
  
 def show_info_popup(message):
@@ -169,7 +182,7 @@ def show_confirmation_popup(message,**kwargs):
     messagebox.attributes("-topmost", True)  # Keep the message box on top
 
     # Set the message box size and position
-    messagebox.geometry("600x100")  # Increase width, reduce height
+    messagebox.geometry("600x200")  # Increase width, reduce height
     messagebox.resizable(False, False)
 
     # Create and pack the message label
@@ -212,23 +225,16 @@ def show_confirmation_popup(message,**kwargs):
 
     # Return the boolean value based on the user's response
     return response.get()
-
-
     
     
 #######################################################################################################################
-# Check chrome function
+# CONSTANT CHECK Functions
 #######################################################################################################################
 
 def check_chrome():
     result = subprocess.Popen(["C:/Program Files/Google/Chrome/Application/chrome.exe"])
     print(result)
     return result
-
-
-#######################################################################################################################
-# Format Drive D: / E: function
-#######################################################################################################################
 
 def format_drive():
     if platform.system() == "Windows":
@@ -240,10 +246,6 @@ def format_drive():
             print(f"Error formatting drive: {e}")
     else:
         raise OSError("Unsupported operating system")
-    
-#######################################################################################################################
-# Check Visual Studio Code
-#######################################################################################################################
 
 def check_vscode_installed():
     try:
@@ -282,10 +284,8 @@ def check_vscode_installed():
         return False
     
 #######################################################################################################################
-#CONSTANT VALUE //Start
+#CONSTANT VALUE / CHECK
 #######################################################################################################################
-
-
 
 CONSTANT_CHECK = {
     "date-time": {
@@ -340,7 +340,7 @@ CONSTANT_CHECK = {
 
 
 #######################################################################################################################
-# Application Check
+# Application Check Functions
 #######################################################################################################################
 
 def _handle_requirement(app_name,requirement,curent_version):
@@ -348,7 +348,7 @@ def _handle_requirement(app_name,requirement,curent_version):
         if not requirement:
             return True
         
-        print("Requirement are declarad, Try to match {app_name} requirement")
+        print("Requirement are declared, Try to match {app_name} requirement")
         
         if requirement['target'] != None and requirement['target'] == curent_version:
             print("Requirement target does not match do you want to unistall it?")
@@ -394,7 +394,7 @@ def _check_app(label_app_name,**kwargs):
 
     log_app = {
         "Name": label_app_name,
-        "Status" : "NOT_INSTALLED", # NOT_INSTALLED, INSTALLED, NEWLY_INSTALLED
+        "Status" : "NOT_INSTALLED", # NOT_INSTALLED, INSTALLED
         "Install_Location": "N/A",
         "Description": "",
         "Check_Date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -616,23 +616,15 @@ async def _check_applications(apps, **kwargs):
     print("Cheking apps completed.")
     print('-' * 100)
         
-    print("-" * 100)
-    print("CHECK SUMMARY")
-    print("-"*100)
-
-    for i,app in enumerate(_json_log['APPLICATION-STATUS']):
-        print(f"{i}. {app} : {_json_log['APPLICATION-STATUS'][app]['Status']}")
-        print(f"Description : {_json_log['APPLICATION-STATUS'][app]['Description']}")
-        print(f"Check Duration : {_json_log['APPLICATION-STATUS'][app]['Check_Time']} seconds")
-        print(f"Check with : {_json_log['APPLICATION-STATUS'][app]['Check_with']}")
-        print("-"*100)
-    
 
 
 #######################################################################################################################
-#MAIN FUNCTION SCRAPE
+# Scraping Functions
 #######################################################################################################################
+
 import json
+from pyppeteer import launch
+
 async def _scrape(username, password, **kwargs):
  
  
@@ -735,72 +727,86 @@ async def _scrape(username, password, **kwargs):
         await _check_applications(labels, **kwargs)
      
  
- 
-    
-#######################################################################################################################
+ #######################################################################################################################
 # FUNTIONS TO GET HOST INFO
 #######################################################################################################################
 
-from scrape.host import get_cpu_info,get_gpus_info,get_network_info,get_disk_info,get_ram_info
-
+from scrape.host import get_cpu_info,get_gpus_info,get_network_info,get_disk_info,get_ram_info,get_motherboard_info
 async def get_host_info():
     
-    print("-"*50)
+    print("-"*100)
     print("Getting host information...")
-    print("-"*50)
+    print("-"*100)
     # Get CPU information
     cpu_info = get_cpu_info()
-    print("CPU Information:")
-    for i, cpu in enumerate(cpu_info, start=1):
-        print(f"CPU {i}:")
-        for key, value in cpu.items():
-            print(f"  - {key}: {value}")
-    
+
     # Get RAM information
     ram_info_list = get_ram_info()
-    print("RAM Information:")
-    for i, ram_info in enumerate(ram_info_list, start=1):
-        print(f"RAM Module {i}:")
-        for key, value in ram_info.items():
-            print(f"  - {key}: {value}")
     
     # Get GPU information
     gpu_info_list = get_gpus_info()
-    print("GPU Information:")
-    for i, gpu_info in enumerate(gpu_info_list, start=1):
-        print(f"GPU {i}:")
-        for key, value in gpu_info.items():
-            print(f"  - {key}: {value}")
             
     # Get disk information
     disk_info_list = get_disk_info()
-    print("Disk Infomation :")
-    for i, disk_info in enumerate(disk_info_list, start=1):
-        print(f"Disk {i}:")
-        for key, value in disk_info.items():
-            print(f"  - {key}: {value}")
             
     # Get network information
     network_info_list = get_network_info()
-    print("Network Information:")
-    for i, network_info in enumerate(network_info_list, start=1):
-        print(f"Network Adapter {i}:")
-        for key, value in network_info.items():
-            print(f"  - {key}: {value}")
-            
-    print("-"*50)
+    
+    # Get motherboard information
+    motherboard_info = get_motherboard_info()
+
+    print("-"*100)
     print("Host information retrieval completed.")
-    print("-"*50)
+    print("-"*100)
     
     _json_log['HOST-SPECS'] = {
         "CPU": cpu_info,
         "RAM": ram_info_list,
         "GPU": gpu_info_list,
         "Disk": disk_info_list,
-        "Network": network_info_list
+        "Network": network_info_list,
+        "Motherboard": motherboard_info
     }
     
     write_json(_json_log, PATH_TO_JSON_LOG)
+    
+ 
+async def _send_report_invent(invent:dict,**kwargs):
+
+    # # Launch a new browser instance
+
+    browser = await launch(headless=False,timeout=60000)
+
+    page = await browser.newPage()
+
+    await page.goto(INVENT_URL_LOGIN)
+    
+    await page.waitForNavigation() 
+    
+    await page.type('[name="nm_brg"]', invent['HOST']['PC-NAME'])  
+    
+    await page.type('[name="jumlah"]', '1')  
+    
+    await page.type('[name="posisi"]', kwargs.get("pc_position","N/A"))  
+    
+    await page.type('[name="processor"]', invent['HOST-SPECS']['CPU']['Name'])  
+    
+    await page.type('[name="motherboard"]', invent['HOST-SPECS']['Motherboard']['Manufacturer'] + " " + invent['HOST-SPECS']['Motherboard']['Model'])
+    
+    await page.type('[name="hdd"]', invent['HOST-SPECS']['Disk'][0]['Model'] + " " + invent['HOST-SPECS']['Disk'][0]['Size (GB)'])
+    
+    await page.type('[name="ram1"]', invent['HOST-SPECS']['RAM'][0]['Type'] + " " + invent['HOST-SPECS']['RAM'][0]['Size (GB)']) 
+    
+    await page.type('[name="ram1"]', invent['HOST-SPECS']['RAM'][1]['Type'] + " " + invent['HOST-SPECS']['RAM'][1]['Size (GB)'] if len(invent['HOST-SPECS']['RAM']) > 1 else "N/A")
+
+    await page.type('[name="vga"]', invent['HOST-SPECS']['GPU'][0]['Name'] + " " + invent['HOST-SPECS']['GPU'][0]['Memory (GB)'])
+    
+    await page.type('[name="cardlan"]', invent['HOST-SPECS']['Network'][0]['Description'] + " " + invent['HOST-SPECS']['Network'][0]['MACAddress'])    
+    
+    await page.type('[name="tanggal_inven"]', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+       
+
+
   
 async def main():
  
@@ -822,9 +828,14 @@ async def main():
     
     parser.add_argument('--async', action='store_true', help='Run application checks asynchronously')
     
+    parser.add_argument('--skip-send-report', action='store_true', help='Skip sending the report')
+    
+    parser.add_argument('--pc-position', required=False, help='The position of the device')
+    
     args = parser.parse_args()
 
-    
+    _json_log['ARGS'] = vars(args)
+
     if args.dangerously_say_yes:
         print(Fore.RED + Back.YELLOW + ">>> Dangerously say yes is enabled. Skipping confirmation prompts.")
     
@@ -834,10 +845,39 @@ async def main():
  
     # Run the scraping function with command-line arguments
     await _scrape(**vars(args))
+    
+    print("-" * 100)
+    print("Host Infomation")
+    print("-"*100)
+    
+    for segment in _json_log['HOST-SPECS']:
+        print(f"{segment} Information\n")
+        for i,device in enumerate(_json_log['HOST-SPECS'][segment]):
+            print(f" {segment} {i}")
+            for key in device:
+                print(f" {key} : {device[key]}")
+            print()
+       
+        print("-"*100)
+        
+    print("-"*100)
+    print("Apps Status")
+    print("-"*100)
+        
+    for i,app in enumerate(_json_log['APPLICATION-STATUS']):
+        print(f"{i}. {app} : {_json_log['APPLICATION-STATUS'][app]['Status']}")
+        print(f"Description : {_json_log['APPLICATION-STATUS'][app]['Description']}")
+        print(f"Check Duration : {_json_log['APPLICATION-STATUS'][app]['Check_Time']} seconds")
+        print(f"Check with : {_json_log['APPLICATION-STATUS'][app]['Check_with']}")
+        print("-"*100)
+        
+    if not args.skip_send_report:
+       await _send_report_invent(_json_log,**vars(args))
  
 
 if __name__ == '__main__':
     asyncio.run(main())
-    input("Press Enter to exit...")
+   
+   
    
  

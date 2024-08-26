@@ -1,1 +1,1 @@
-from .host import get_cpu_info, get_ram_info, get_gpus_info, get_disk_info,get_network_info
+from .host import *
