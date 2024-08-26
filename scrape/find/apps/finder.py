@@ -1,6 +1,5 @@
 import winreg
 import wmi
-import pythoncom
 
 #######################################################################################################################
 # Application functions (WMI)
@@ -8,7 +7,6 @@ import pythoncom
 def find_installed_apps_by_wmi(app_name):
     """Find installed applications and their install locations using WMI."""
     # Initialize the WMI client
-    pythoncom.CoInitialize()
     c = wmi.WMI()
 
     # Initialize a dictionary to hold results
@@ -22,7 +20,6 @@ def find_installed_apps_by_wmi(app_name):
         install_location = product.InstallLocation if product.InstallLocation else 'N/A'
         apps_info[display_name] = install_location
 
-    pythoncom.CoUninitialize()
     return apps_info
 
 def find_installed_apps_by_registry(app_name):

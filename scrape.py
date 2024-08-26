@@ -50,8 +50,8 @@ INVENT_URL_FORM = 'http://127.0.0.1:5500/index.html'
 INVENT_URL_LOGIN = 'http://127.0.0.1:5500/login.html'
 CEKSOFT_URL_LOGIN = 'http://127.0.0.1:5500/ceksoft/login.php'
 CEKSOFT_URL_FORM = 'http://127.0.0.1:5500/ceksoft'
-PATH_TO_JSON_LOG = os.curdir + '/log.json'
-PATH_INSTRUCTIONS = os.curdir + '/instructions'
+PATH_TO_JSON_LOG =  os.path.join(os.path.dirname(os.path.abspath(__file__)),'log.json')
+PATH_INSTRUCTIONS = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'instructions')
 KEYBOARD_MOUSE_TEST_SITE = 'https://en.kFey-test.ru/'
 REQUIRED_MODULES = ['setuptools','pyppeteer','wmi','pywintypes','pytz','ntplib','platform','psutil','GPUtil','pyperclip','colorama','tabulate','pyunpack', 'patool']
 #######################################################################################################################
@@ -83,7 +83,8 @@ if os.path.exists(PATH_INSTRUCTIONS):
             _instructions.append(base.lower())
 else:
     # close the app
-    print(f"Instructions folder not found. Please create a folder named 'instructions' in the same directory as this script.")
+    
+    print(f"Instructions folder not found at {PATH_INSTRUCTIONS}. Please create a folder named 'instructions' in the same directory as this script.")
     sys.exit(1)
 
 # Cheking required modules
@@ -385,8 +386,9 @@ def chose_app_to_open(app_list):
             except ValueError:
                 print("Invalid index")
 
-
+import pythoncom
 def _check_app(label_app_name,**kwargs):
+    pythoncom.CoInitialize()
     print(f"Running function check_app on thread: {threading.current_thread().name}")
     
     if label_app_name in _json_log['APPLICATION-STATUS']:
@@ -569,6 +571,7 @@ def _check_app(label_app_name,**kwargs):
     log_app["Check_with"] = check_with
     _json_log['APPLICATION-STATUS'][label_app_name] = log_app
     write_json(_json_log, PATH_TO_JSON_LOG)
+    pythoncom.CoUninitialize()
     
 
 async def _check_applications(apps, **kwargs):
@@ -796,7 +799,7 @@ def _intro_ascii_art():
 ██║   ██║██╔═══╝    ██║       ██╔══██║██║   ██║   ██║   ██║   ██║██║╚██╔╝██║██╔══██║   ██║   ██║██║   ██║██║╚██╗██║    ██╔══██╗  ╚██╔╝      ██║╚██╗██║██║╚════██║██╔══██║
 ╚██████╔╝██║        ██║       ██║  ██║╚██████╔╝   ██║   ╚██████╔╝██║ ╚═╝ ██║██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║    ██████╔╝   ██║       ██║ ╚████║██║███████║██║  ██║
  ╚═════╝ ╚═╝        ╚═╝       ╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝    ╚═════╝    ╚═╝       ╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝
-                                                                                                                                                                         
+                                                                                                                                                                          
 """)
   
 async def main():
