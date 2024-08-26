@@ -616,7 +616,48 @@ async def _check_applications(apps, **kwargs):
     print("Cheking apps completed.")
     print('-' * 100)
         
+ #######################################################################################################################
+# FUNTIONS TO GET HOST INFO
+#######################################################################################################################
 
+from scrape.host import get_cpu_info,get_gpus_info,get_network_info,get_disk_info,get_ram_info,get_motherboard_info
+async def get_host_info():
+    
+    print("-"*100)
+    print("Getting host information...")
+    print("-"*100)
+    # Get CPU information
+    cpu_info = get_cpu_info()
+
+    # Get RAM information
+    ram_info_list = get_ram_info()
+    
+    # Get GPU information
+    gpu_info_list = get_gpus_info()
+            
+    # Get disk information
+    disk_info_list = get_disk_info()
+            
+    # Get network information
+    network_info_list = get_network_info()
+    
+    # Get motherboard information
+    motherboard_info = get_motherboard_info()
+
+    print("-"*100)
+    print("Host information retrieval completed.")
+    print("-"*100)
+    
+    _json_log['HOST-SPECS'] = {
+        "CPU": cpu_info,
+        "RAM": ram_info_list,
+        "GPU": gpu_info_list,
+        "Disk": disk_info_list,
+        "Network": network_info_list,
+        "Motherboard": motherboard_info
+    }
+    
+    write_json(_json_log, PATH_TO_JSON_LOG)
 
 #######################################################################################################################
 # Scraping Functions
@@ -625,7 +666,7 @@ async def _check_applications(apps, **kwargs):
 import json
 from pyppeteer import launch
 
-async def _scrape(username, password, **kwargs):
+# async def _scrape(username, password, **kwargs):
  
  
         # # Launch a new browser instance
@@ -708,68 +749,7 @@ async def _scrape(username, password, **kwargs):
  
         # ''')
  
- 
-        # Print the extracted text
-        labels = ['winrar','flutter-sdk={"target":null,"minimum":"1.19.2"}',"visual-studio-code",'flutter-extension','virtualization','git', 'virtual-box', 'chrome']
-        requirements = [ label.split('=')[1] if len(label.split("=")) == 2 else None for label in labels ]
-        labels = [ label.split("=")[0] for label in labels ]
-        requirements = [json.loads(requirement) if requirement else None for requirement in requirements]
-        
-        kwargs['requirements'] = requirements
-        
-        print('-' * 100)
-        print("Applications to check:")
-        print('-' * 100)
-        
-        for label in labels:
-            print(f"- {label}")
-            
-        await _check_applications(labels, **kwargs)
-     
- 
- #######################################################################################################################
-# FUNTIONS TO GET HOST INFO
-#######################################################################################################################
 
-from scrape.host import get_cpu_info,get_gpus_info,get_network_info,get_disk_info,get_ram_info,get_motherboard_info
-async def get_host_info():
-    
-    print("-"*100)
-    print("Getting host information...")
-    print("-"*100)
-    # Get CPU information
-    cpu_info = get_cpu_info()
-
-    # Get RAM information
-    ram_info_list = get_ram_info()
-    
-    # Get GPU information
-    gpu_info_list = get_gpus_info()
-            
-    # Get disk information
-    disk_info_list = get_disk_info()
-            
-    # Get network information
-    network_info_list = get_network_info()
-    
-    # Get motherboard information
-    motherboard_info = get_motherboard_info()
-
-    print("-"*100)
-    print("Host information retrieval completed.")
-    print("-"*100)
-    
-    _json_log['HOST-SPECS'] = {
-        "CPU": cpu_info,
-        "RAM": ram_info_list,
-        "GPU": gpu_info_list,
-        "Disk": disk_info_list,
-        "Network": network_info_list,
-        "Motherboard": motherboard_info
-    }
-    
-    write_json(_json_log, PATH_TO_JSON_LOG)
-    
  
 async def _send_report_invent(invent:dict,**kwargs):
     browser = await launch(headless=False,timeout=60000)
@@ -806,12 +786,21 @@ async def _send_report_invent(invent:dict,**kwargs):
         
     finally:
         await browser.close()
-        
-       
 
+def _intro_ascii_art():
+    print(Fore.CYAN + Style.BRIGHT + """
 
+██╗   ██╗██████╗ ████████╗     █████╗ ██╗   ██╗████████╗ ██████╗ ███╗   ███╗ █████╗ ████████╗██╗ ██████╗ ███╗   ██╗    ██████╗ ██╗   ██╗    ███╗   ██╗██╗███████╗██╗  ██╗
+██║   ██║██╔══██╗╚══██╔══╝    ██╔══██╗██║   ██║╚══██╔══╝██╔═══██╗████╗ ████║██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║    ██╔══██╗╚██╗ ██╔╝    ████╗  ██║██║██╔════╝██║  ██║
+██║   ██║██████╔╝   ██║       ███████║██║   ██║   ██║   ██║   ██║██╔████╔██║███████║   ██║   ██║██║   ██║██╔██╗ ██║    ██████╔╝ ╚████╔╝     ██╔██╗ ██║██║███████╗███████║
+██║   ██║██╔═══╝    ██║       ██╔══██║██║   ██║   ██║   ██║   ██║██║╚██╔╝██║██╔══██║   ██║   ██║██║   ██║██║╚██╗██║    ██╔══██╗  ╚██╔╝      ██║╚██╗██║██║╚════██║██╔══██║
+╚██████╔╝██║        ██║       ██║  ██║╚██████╔╝   ██║   ╚██████╔╝██║ ╚═╝ ██║██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║    ██████╔╝   ██║       ██║ ╚████║██║███████║██║  ██║
+ ╚═════╝ ╚═╝        ╚═╝       ╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝    ╚═════╝    ╚═╝       ╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                                                         
+""")
   
 async def main():
+    _intro_ascii_art()
     # Parsing arguments
     parser = argparse.ArgumentParser(description='Login and scrape data using Pyppeteer.')
     parser.add_argument('--username', required=False, help='The username for login')
@@ -829,13 +818,45 @@ async def main():
 
     if args.dangerously_say_yes:
         print(Fore.RED + Back.YELLOW + ">>> Dangerously say yes is enabled. Skipping confirmation prompts.")
+        
+    # do query
+    
+    # Print the extracted text
+    labels = ['winrar','flutter-sdk={"target":null,"minimum":"1.19.2"}',"visual-studio-code",'flutter-extension','virtualization','git', 'virtual-box', 'chrome']
+    requirements = [ label.split('=')[1] if len(label.split("=")) == 2 else None for label in labels ]
+    labels = [ label.split("=")[0] for label in labels ]
+    
+    def add_name(x,i):
+        try:
+            loaded = json.loads(x)
+            loaded['name'] = labels[i]
+            return loaded
+        except:
+            return None
+    
+    requirements = [add_name(requirement,i) if requirement else None for i,requirement in enumerate(requirements)]
+    
+    kwargs = vars(args)
+    kwargs['requirements'] = requirements
+    
+    print('-' * 100)
+    print("Applications to check:")
+    print('-' * 100)
     
     # Running host info function
     if not args.skip_host_check:
         await get_host_info()
-
-    # Run the scraping function with command-line arguments
-    await _scrape(**vars(args))
+    
+    for label in labels:
+        print(f"- {label}")
+        
+    await _check_applications(labels, **kwargs)
+    
+    print('-' * 100)
+    print("Checking applications completed.")
+    print('-' * 100)
+    
+    
 
     # Print host information
     print("-" * 100)
@@ -867,7 +888,6 @@ async def main():
     if not args.skip_send_report:
         await _send_report_invent(_json_log, **vars(args))
  
-
 if __name__ == '__main__':
     asyncio.run(main())
    
