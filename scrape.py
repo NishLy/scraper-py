@@ -12,12 +12,9 @@ import queue
 from tkinter import messagebox
 from datetime import datetime
 from functools import partial
-
 from scrape.json import read_json, write_json
 from scrape.module import check_required_modules
-from scrape.time import set_time
-from scrape.find.apps import find_installed_apps_by_wmi,find_installed_apps_by_registry,find_executable_on_path
-from scrape.host.check import check_virtualization,check_keyboard,check_mouse
+
 
 #######################################################################################################################
 # ENV SET / IF FAIL USE POWERSHEL TEMP ENV CHANGE
@@ -40,9 +37,6 @@ if not pip_ready_to_use:
     except subprocess.CalledProcessError as e:
         print(f"Failed to install pip: {e}")
         sys.exit(1)
-        
-        
-
 
 #######################################################################################################################
 # CONSTANT VARS
@@ -53,7 +47,7 @@ CEKSOFT_URL_FORM = 'http://127.0.0.1:5500/ceksoft'
 PATH_TO_JSON_LOG =  os.path.join(os.path.dirname(os.path.abspath(__file__)),'log.json')
 PATH_INSTRUCTIONS = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'instructions')
 KEYBOARD_MOUSE_TEST_SITE = 'https://en.kFey-test.ru/'
-REQUIRED_MODULES = ['setuptools','pyppeteer','wmi','pywintypes','pytz','ntplib','platform','psutil','GPUtil','pyperclip','colorama','tabulate','pyunpack', 'patool']
+REQUIRED_MODULES = ['setuptools','pyppeteer','wmi','pytz','ntplib','platform','psutil','GPUtil','pyperclip','colorama','tabulate','pyunpack', 'patool']
 #######################################################################################################################
 
 #######################################################################################################################
@@ -94,6 +88,9 @@ check_required_modules(REQUIRED_MODULES)
 #Late module import
 #######################################################################################################################
 from colorama import Fore, Style, init, Back
+from scrape.time import set_time
+from scrape.find.apps import find_installed_apps_by_wmi,find_installed_apps_by_registry,find_executable_on_path
+from scrape.host.check import check_virtualization,check_keyboard,check_mouse
 
 init(autoreset=True)
  

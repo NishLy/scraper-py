@@ -11,5 +11,6 @@ log.json
 *.rar
 
 .venv
+.scraper-venv
 
 *.html

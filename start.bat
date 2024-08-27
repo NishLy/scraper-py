@@ -1,23 +1,23 @@
 @echo off
 setlocal
 
+:: Create a virtual environment
+python -m venv .scraper-venv
+
+:: Activate the virtual environment
+call .scraper-venv\Scripts\activate
+
 :: Set environment variables
-set MY_VARIABLE1=Value1
-set MY_VARIABLE2=Value2
+set PYPPETEER_CHROMIUM_REVISION='1263111'
 
-:: Find Python executable using 'where' command and set it
-for /f "delims=" %%i in ('where python 2^>nul') do (
-    set "PYTHON_EXECUTABLE=%%i"
-    goto :found
-)
-
-:: If no Python executable was found, exit with an error
-echo Python executable not found. Please ensure Python is installed and available in the PATH.
-exit /b 1
-
-:found
 :: Get the directory where the batch script is located
 set "SCRIPT_DIR=%~dp0"
+
+:: Install Python dependencies
+python install -r "%SCRIPT_DIR%requirements.txt"
+
+:: Python venv excutable, using relative path
+set "PYTHON_EXECUTABLE=%SCRIPT_DIR%.scraper-venv\Scripts\python.exe"
 
 :: Define the relative path to your Python script
 set "RELATIVE_PYTHON_SCRIPT_PATH=scrape.py"
