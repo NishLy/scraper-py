@@ -15,6 +15,17 @@ from functools import partial
 from scrape.json import read_json, write_json
 from scrape.module import check_required_modules
 
+def _intro_ascii_art():
+    print(Fore.CYAN + Style.BRIGHT + """
+
+██╗   ██╗██████╗ ████████╗     █████╗ ██╗   ██╗████████╗ ██████╗ ███╗   ███╗ █████╗ ████████╗██╗ ██████╗ ███╗   ██╗    ██████╗ ██╗   ██╗    ███╗   ██╗██╗███████╗██╗  ██╗
+██║   ██║██╔══██╗╚══██╔══╝    ██╔══██╗██║   ██║╚══██╔══╝██╔═══██╗████╗ ████║██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║    ██╔══██╗╚██╗ ██╔╝    ████╗  ██║██║██╔════╝██║  ██║
+██║   ██║██████╔╝   ██║       ███████║██║   ██║   ██║   ██║   ██║██╔████╔██║███████║   ██║   ██║██║   ██║██╔██╗ ██║    ██████╔╝ ╚████╔╝     ██╔██╗ ██║██║███████╗███████║
+██║   ██║██╔═══╝    ██║       ██╔══██║██║   ██║   ██║   ██║   ██║██║╚██╔╝██║██╔══██║   ██║   ██║██║   ██║██║╚██╗██║    ██╔══██╗  ╚██╔╝      ██║╚██╗██║██║╚════██║██╔══██║
+╚██████╔╝██║        ██║       ██║  ██║╚██████╔╝   ██║   ╚██████╔╝██║ ╚═╝ ██║██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║    ██████╔╝   ██║       ██║ ╚████║██║███████║██║  ██║
+ ╚═════╝ ╚═╝        ╚═╝       ╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝    ╚═════╝    ╚═╝       ╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝
+                                                                                                                                                                          
+""")
 
 #######################################################################################################################
 # ENV SET / IF FAIL USE POWERSHEL TEMP ENV CHANGE
@@ -336,7 +347,6 @@ CONSTANT_CHECK = {
     },
 }
 
-
 #######################################################################################################################
 # Application Check Functions
 #######################################################################################################################
@@ -384,6 +394,7 @@ def chose_app_to_open(app_list):
                 print("Invalid index")
 
 import pythoncom
+
 def _check_app(label_app_name,**kwargs):
     pythoncom.CoInitialize()
     print(f"Running function check_app on thread: {threading.current_thread().name}")
@@ -621,11 +632,9 @@ async def _check_applications(apps, **kwargs):
 #######################################################################################################################
 
 from scrape.host import get_cpu_info,get_gpus_info,get_network_info,get_disk_info,get_ram_info,get_motherboard_info
+
 async def get_host_info():
-    
-    print("-"*100)
-    print("Getting host information...")
-    print("-"*100)
+
     # Get CPU information
     cpu_info = get_cpu_info()
 
@@ -643,10 +652,6 @@ async def get_host_info():
     
     # Get motherboard information
     motherboard_info = get_motherboard_info()
-
-    print("-"*100)
-    print("Host information retrieval completed.")
-    print("-"*100)
     
     _json_log['HOST-SPECS'] = {
         "CPU": cpu_info,
@@ -787,20 +792,14 @@ async def _send_report_invent(invent:dict,**kwargs):
     finally:
         await browser.close()
 
-def _intro_ascii_art():
-    print(Fore.CYAN + Style.BRIGHT + """
+#######################################################################################################################
+# Main Function
+#######################################################################################################################
 
-██╗   ██╗██████╗ ████████╗     █████╗ ██╗   ██╗████████╗ ██████╗ ███╗   ███╗ █████╗ ████████╗██╗ ██████╗ ███╗   ██╗    ██████╗ ██╗   ██╗    ███╗   ██╗██╗███████╗██╗  ██╗
-██║   ██║██╔══██╗╚══██╔══╝    ██╔══██╗██║   ██║╚══██╔══╝██╔═══██╗████╗ ████║██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║    ██╔══██╗╚██╗ ██╔╝    ████╗  ██║██║██╔════╝██║  ██║
-██║   ██║██████╔╝   ██║       ███████║██║   ██║   ██║   ██║   ██║██╔████╔██║███████║   ██║   ██║██║   ██║██╔██╗ ██║    ██████╔╝ ╚████╔╝     ██╔██╗ ██║██║███████╗███████║
-██║   ██║██╔═══╝    ██║       ██╔══██║██║   ██║   ██║   ██║   ██║██║╚██╔╝██║██╔══██║   ██║   ██║██║   ██║██║╚██╗██║    ██╔══██╗  ╚██╔╝      ██║╚██╗██║██║╚════██║██╔══██║
-╚██████╔╝██║        ██║       ██║  ██║╚██████╔╝   ██║   ╚██████╔╝██║ ╚═╝ ██║██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║    ██████╔╝   ██║       ██║ ╚████║██║███████║██║  ██║
- ╚═════╝ ╚═╝        ╚═╝       ╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝    ╚═════╝    ╚═╝       ╚═╝  ╚═══╝╚═╝╚══════╝╚═╝  ╚═╝
-                                                                                                                                                                          
-""")
   
 async def main():
     _intro_ascii_art()
+    
     # Parsing arguments
     parser = argparse.ArgumentParser(description='Login and scrape data using Pyppeteer.')
     parser.add_argument('--username', required=False, help='The username for login')
@@ -838,26 +837,26 @@ async def main():
     
     kwargs = vars(args)
     kwargs['requirements'] = requirements
+    # Running host info function
+    if not args.skip_host_check:
+        await get_host_info()
+    
+    # Print applications to check
     
     print('-' * 100)
     print("Applications to check:")
     print('-' * 100)
     
-    # Running host info function
-    if not args.skip_host_check:
-        await get_host_info()
-    
     for label in labels:
         print(f"- {label}")
-        
+    
+    # Check applications
     await _check_applications(labels, **kwargs)
     
     print('-' * 100)
     print("Checking applications completed.")
     print('-' * 100)
     
-    
-
     # Print host information
     print("-" * 100)
     print("Host Information")
