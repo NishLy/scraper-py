@@ -69,3 +69,58 @@ def find_executable_on_path(executable_path,executable_name,executable_formats =
     if len(found) == 0:
         return None
     return found
+
+import subprocess
+
+def find_installed_apps_by_getpackage(app_name:str):
+    """Run a PowerShell command and return its output, handling both stdout and stderr."""
+    try:
+        process = subprocess.run(
+            ["powershell", "-Command", f'Get-Package | Where-Object {{$_.Name -like "*{app_name}*"}} | Select-Object Name, Version, Source | Format-Table -HideTableHeaders'],
+            capture_output=True,
+            text=True,
+            shell=True,
+            encoding='utf-8',  # Ensure correct encoding
+            check=True  # This raises a CalledProcessError if the command fails
+        )
+
+        apps_info = {}
+        
+        for line in process.stdout.splitlines():
+            # Skip empty lines
+            print(line)
+            if line:
+                # Split the line into columns
+                columns = line.split()
+                print(columns)
+                # Extract the application name,verson and source
+                app_name = columns[0]
+                app_version = columns[1]
+                app_source = columns[2] if len(columns) > 2 else "N/A"
+                apps_info[app_name] = {
+                    "version": app_version,
+                    "source": app_source
+                }
+                
+                
+                
+        return apps_info
+    except subprocess.CalledProcessError as e:
+        # Handle the error by capturing the stderr output
+        error_message = e.stderr.strip()
+        print(f"Error executing command: {error_message}")
+        return None
+        
+
+if __name__ == "__main__":
+    app_name = "Git"
+    print(f"Searching for installed applications with the name '{app_name}'...\n")
+ 
+    # Find installed applications using Get-Package
+    print("Using Get-Package:")
+    apps_info_getpackage = find_installed_apps_by_getpackage(app_name)
+    for app, version in apps_info_getpackage.items():
+        print(f"Application: {app}")
+        print(f"Version: {version}")
+        print()
+    input("Press Enter to continue...")

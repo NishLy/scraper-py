@@ -1,1 +1,1 @@
-from .finder  import find_executable_on_path,find_installed_apps_by_registry,find_installed_apps_by_wmi
+from .finder  import *

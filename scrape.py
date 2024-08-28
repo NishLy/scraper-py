@@ -100,7 +100,7 @@ check_required_modules(REQUIRED_MODULES)
 #######################################################################################################################
 from colorama import Fore, Style, init, Back
 from scrape.time import set_time
-from scrape.find.apps import find_installed_apps_by_wmi,find_installed_apps_by_registry,find_executable_on_path
+from scrape.find.apps import find_installed_apps_by_wmi,find_installed_apps_by_registry,find_executable_on_path,find_installed_apps_by_getpackage
 from scrape.host.check import check_virtualization,check_keyboard,check_mouse
 
 init(autoreset=True)
@@ -509,16 +509,16 @@ def _check_app(label_app_name,**kwargs):
                 print(Back.YELLOW + Fore.BLACK + "Skiping 'CONSTANT CHECK' because error occured")
                 log_app['Description'] = log_app["Description"] + " - " + CONSTANT_CHECK[label_app_name]['message_fail']
         
-    if not check_with and (result := find_installed_apps_by_wmi(label_app_name.replace("-", ""))) not in [None, {}]:
-        print(Fore.CYAN + f"{label_app_name} is detected in WMI. Trying to open the application...")
-        if all(value == "N/A" for value in result.values()):
-            print(Fore.BLACK + Back.YELLOW + f"{label_app_name} found in WMI, But WMI cannot provide instalation path. Skiping WMI or try open it manualy")
-            log_app["Description"] = log_app["Description"] + " - " + f"{label_app_name} found in WMI, But WMI cannot provide instalation path."
+    if not check_with and (result := find_installed_apps_by_getpackage(label_app_name.replace("-", ""))) not in [None, {}]:
+        print(Fore.CYAN + f"{label_app_name} is detected GET-PACKAGE | WHERE-OBJECT. Trying to open the application...")
+        if all(result[app]['source'] == "N/A" for app in result):
+            print(Fore.BLACK + Back.YELLOW + f"{label_app_name} found GET-PACKAGE | WHERE-OBJECT, But GET-PACKAGE | WHERE-OBJECT cannot provide instalation path. Skiping WMI or try open it manualy")
+            log_app["Description"] = log_app["Description"] + " - " + f"{label_app_name} found GET-PACKAGE | WHERE-OBJECT, But GET-PACKAGE | WHERE-OBJECT cannot provide instalation path."
         else:
             try:
                 key = 0
                 if len(result) > 1:
-                    print(Fore.MAGENTA + f"Multiple installations found in WMI for '{label_app_name}'. Please select or open each istalation path" )
+                    print(Fore.MAGENTA + f"Multiple installations found GET-PACKAGE | WHERE-OBJECT for '{label_app_name}'. Please select or open each istalation path" )
                     key = chose_app_to_open(result)
                 else:
                     key = list(result.keys())[0]
@@ -539,7 +539,7 @@ def _check_app(label_app_name,**kwargs):
                     log_app["Description"] = f'{label_app_name} is not working.'
                 if evaluate and type(evaluate) == subprocess.Popen:
                     evaluate.terminate()
-                check_with = "WMI"
+                check_with = "GETPACKAGE | WHERE-OBJECT"
                 
             except Exception as e:
                 print(Back.RED + Fore.WHITE + f"Error open {label_app_name} with WMI : {e}")
@@ -895,15 +895,15 @@ async def main():
         print(Fore.RED + Back.YELLOW + ">>> Dangerously say yes is enabled. Skipping confirmation prompts.")
         
     # do query
-    labels =  await _scrape_ceksoft(args.username,args.password)
+    # labels =  await _scrape_ceksoft(args.username,args.password)
     
-    if not labels:
-        print("Error Fetching Labels : " + labels)
-        return sys.exit(1)
+    # if not labels:
+    #     print("Error Fetching Labels : " + labels)
+    #     return sys.exit(1)
     
     
     # Print the extracted text
-    # labels = ['date-time','winrar','flutter-sdk={"target":null,"minimum":"1.19.2"}',"visual-studio-code",'flutter-extension','virtualization','git', 'virtual-box', 'chrome']
+    labels = ['git','date-time','winrar','flutter-sdk={"target":null,"minimum":"1.19.2"}',"visual-studio-code",'flutter-extension','virtualization','git', 'virtual-box', 'chrome']
     requirements = [ label.split('=')[1] if len(label.split("=")) == 2 else None for label in labels ]
     labels = [ label.split("=")[0] for label in labels ]
     

@@ -113,17 +113,17 @@ def get_gpus_info():
         }
         gpu_info_list.append(gpu_info)
     
-    # Collect additional GPU info from GPUtil
-    for gpu in gpus:
-        gpu_info = {
-            "Name": gpu.name.strip(),
-            "Manufacturer": gpu.vendor.strip(),
-            "VRAM (GB)": gpu.memoryTotal / 1024,
-            "Core Clock Speed (MHz)": gpu.clockSpeed,
-            "Architecture": gpu.name.split()[0],  # Rough estimation of architecture
+    # # Collect additional GPU info from GPUtil
+    # for gpu in gpus:
+    #     gpu_info = {
+    #         "Name": gpu.name.strip(),
+    #         "Manufacturer": gpu.vendor.strip(),
+    #         "VRAM (GB)": gpu.memoryTotal / 1024,
+    #         "Core Clock Speed (MHz)": gpu.clockSpeed,
+    #         "Architecture": gpu.name.split()[0],  # Rough estimation of architecture
             
-        }
-        gpu_info_list.append(gpu_info)
+    #     }
+    #     gpu_info_list.append(gpu_info)
     
     return gpu_info_list
 
