@@ -99,6 +99,7 @@ check_required_modules(REQUIRED_MODULES)
 #Late module import
 #######################################################################################################################
 from colorama import Fore, Style, init, Back
+from scrape.instruction import compare_app_version
 from scrape.time import set_time
 from scrape.find.apps import find_installed_apps_by_wmi,find_installed_apps_by_registry,find_executable_on_path,find_installed_apps_by_getpackage
 from scrape.host.check import check_virtualization,check_keyboard,check_mouse
@@ -534,7 +535,7 @@ def _check_app(label_app_name,**kwargs):
                 if key != -1:
                     evaluate = open_application(result[key],label_app_name)
                 
-                if show_confirmation_popup(f"Did {label_app_name} working successfully?",no_confirm=kwargs.get("dangerously_say_yes",False),evaluate=evaluate):
+                if show_confirmation_popup(f"Did {label_app_name} working successfully?\n { f"Current version of {compare_app_version(result[key]['version'],kwargs.get("requirement"),label_app_name)['message']}" if kwargs.get('requirement',False) else "This app doesnt specify version"}",no_confirm=kwargs.get("dangerously_say_yes",False),evaluate=evaluate):
                     print(Fore.GREEN + f">>> {label_app_name} is working. Marked as installed.")
                     log_app["Status"] = "INSTALLED"
                     log_app["Install_Location"] = result[key]['source']
@@ -574,7 +575,7 @@ def _check_app(label_app_name,**kwargs):
                 if key != -1:
                     evaluate = open_application(result[key]['source'],label_app_name)
                     
-                if show_confirmation_popup(f"Did {label_app_name} working successfully?",no_confirm=kwargs.get("dangerously_say_yes",False),evaluate=evaluate):
+                if show_confirmation_popup(f"Did '{label_app_name}' working successfully?\n { f"Current version of {compare_app_version(result[key]['version'],kwargs.get("requirement"),label_app_name)['message']}" if kwargs.get('requirement',False) else "This app doesnt specify version"}",no_confirm=kwargs.get("dangerously_say_yes",False),evaluate=evaluate):
                     print(Fore.GREEN + f">>> {label_app_name} is working. Marked as installed.")
                     log_app["Status"] = "INSTALLED"
                     log_app["Install_Location"] = result[key]['source']
