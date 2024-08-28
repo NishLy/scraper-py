@@ -105,7 +105,7 @@ from scrape.host.check import check_virtualization,check_keyboard,check_mouse
 
 init(autoreset=True)
  
-def get_yes_or_no(prompt):
+def _show_prompt_confirmation(prompt):
     while True:
         user_input = input(prompt).strip().lower()
         if user_input in ['y', 'yes']:
@@ -119,24 +119,29 @@ def get_yes_or_no(prompt):
 def open_application(executable_path,app_name):
     print(Fore.CYAN + f"Opening {app_name} at {executable_path}")
     
+    if not os.path.exists(executable_path):
+        print(Fore.RED + f"Executable file not found at {executable_path}")
+        return None
+        
     result = find_executable_on_path(executable_path,app_name)
     
     if not result: 
         print(Fore.RED + f"No executable (MSI,EXE) files found for {app_name}. at {executable_path}")
         print(Back.MAGENTA + Fore.WHITE + "Please confirm the lines below (Cannot skiped in --dangerously-say-yes)")
         
-        if get_yes_or_no("Open the installation path? (y,n)"):
+        if _show_prompt_confirmation("Open the installation path? (y,n)"):
             subprocess.run(
             ['powershell', '-NoProfile', '-Command',f'explorer "{executable_path}"'], shell=True,check=True
         )
 
-        get_yes_or_no("Is in the installation path have executable file and it run successfuly ? (y,n)")
+        _show_prompt_confirmation("Is in the installation path have executable file and it run successfuly ? (y,n)")
         return None
 
     if len(result) > 1:
         print(Fore.MAGENTA + f"Multiple executable found path '{app_name}'. Please select one" )
         
         dict = {}
+        
         for path in result:
             dict[path] = path
         key = chose_app_to_open(dict)
@@ -432,7 +437,7 @@ def _handle_requirement(app_name,requirement,curent_version):
         
         if requirement['target'] != None and requirement['target'] == curent_version:
             print("Requirement target does not match do you want to unistall it?")
-            get_yes_or_no("Please enter (y/n) : ")
+            _show_prompt_confirmation("Please enter (y/n) : ")
         
         if requirement['target'] == None and requirement['minimum'] <= curent_version:
             print("Requirement minimum are fullfiled, and continue checking sequence")
@@ -478,6 +483,7 @@ def _check_app(label_app_name,**kwargs):
         "Name": label_app_name,
         "Status" : "NOT_INSTALLED", # NOT_INSTALLED, INSTALLED
         "Install_Location": "N/A",
+        "Version" : "N/A",
         "Description": "",
         "Check_Date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "Check_Duration": 0,
@@ -512,7 +518,7 @@ def _check_app(label_app_name,**kwargs):
     if not check_with and (result := find_installed_apps_by_getpackage(label_app_name.replace("-", ""))) not in [None, {}]:
         print(Fore.CYAN + f"{label_app_name} is detected GET-PACKAGE | WHERE-OBJECT. Trying to open the application...")
         if all(result[app]['source'] == "N/A" for app in result):
-            print(Fore.BLACK + Back.YELLOW + f"{label_app_name} found GET-PACKAGE | WHERE-OBJECT, But GET-PACKAGE | WHERE-OBJECT cannot provide instalation path. Skiping WMI or try open it manualy")
+            print(Fore.BLACK + Back.YELLOW + f"{label_app_name} found GET-PACKAGE | WHERE-OBJECT, But GET-PACKAGE | WHERE-OBJECT cannot provide instalation path. Skiping  GET-PACKAGE | WHERE-OBJECT or try open it manualy")
             log_app["Description"] = log_app["Description"] + " - " + f"{label_app_name} found GET-PACKAGE | WHERE-OBJECT, But GET-PACKAGE | WHERE-OBJECT cannot provide instalation path."
         else:
             try:
@@ -531,7 +537,7 @@ def _check_app(label_app_name,**kwargs):
                 if show_confirmation_popup(f"Did {label_app_name} working successfully?",no_confirm=kwargs.get("dangerously_say_yes",False),evaluate=evaluate):
                     print(Fore.GREEN + f">>> {label_app_name} is working. Marked as installed.")
                     log_app["Status"] = "INSTALLED"
-                    log_app["Install_Location"] = result[key]
+                    log_app["Install_Location"] = result[key]['source']
                     log_app["Description"] = f'{label_app_name} is working.'
                 else:
                     print(Fore.RED + f">>> {label_app_name} is not working. Marked as not installed.")
@@ -540,12 +546,13 @@ def _check_app(label_app_name,**kwargs):
                 if evaluate and type(evaluate) == subprocess.Popen:
                     evaluate.terminate()
                 check_with = "GETPACKAGE | WHERE-OBJECT"
+                log_app['Version'] = result[key]['version']
                 
             except Exception as e:
-                print(Back.RED + Fore.WHITE + f"Error open {label_app_name} with WMI : {e}")
-                print(Back.YELLOW + Fore.BLACK + "Skiping 'WMI' because error occured")
+                print(Back.RED + Fore.WHITE + f"Error open {label_app_name} with  GET-PACKAGE | WHERE-OBJEC : {str(e)}")
+                print(Back.YELLOW + Fore.BLACK + "Skiping 'GET-PACKAGE | WHERE-OBJECT' because error occured")
                 log_app["Status"] = "NOT_INSTALLED"
-                log_app["Description"] = log_app["Description"] + " - " + f"Error loading module: {e}"    
+                log_app["Description"] = log_app["Description"] + " - " + f"Error loading module: {str(e)}"    
                             
     if not check_with and (result := find_installed_apps_by_registry(label_app_name.replace("-", ""))) not in [None, {}] :
         print(Fore.CYAN + f"{label_app_name} is detected in REGISTRY. Trying to open the application...")
@@ -570,7 +577,7 @@ def _check_app(label_app_name,**kwargs):
                 if show_confirmation_popup(f"Did {label_app_name} working successfully?",no_confirm=kwargs.get("dangerously_say_yes",False),evaluate=evaluate):
                     print(Fore.GREEN + f">>> {label_app_name} is working. Marked as installed.")
                     log_app["Status"] = "INSTALLED"
-                    log_app["Install_Location"] = result[key]
+                    log_app["Install_Location"] = result[key]['source']
                     log_app["Description"] = f'{label_app_name} is working.'
                 else:
                     print(Fore.RED + f">>> {label_app_name} is not working. Marked as not installed.")
@@ -580,6 +587,7 @@ def _check_app(label_app_name,**kwargs):
                 if evaluate and type(evaluate) == subprocess.Popen:
                     evaluate.terminate()
                 check_with = "REGISTRY"
+                log_app['Version'] = result[key]['version']
                 
             except Exception as e:
                 print(Back.RED + Fore.WHITE + f"Error open {label_app_name} with REGISTRY : " + str(e))
@@ -861,6 +869,7 @@ async def _send_report_invent(invent:dict,**kwargs):
         
         await page.type('[name="tanggal_inven"]', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         
+        
     finally:
         await browser.close()
 
@@ -881,10 +890,11 @@ async def main():
     parser.add_argument('--skip-host-check', action='store_true', help='Skip host information retrieval')
     parser.add_argument('--skip-installed', action='store_true', help='Skip checking installed applications')
     parser.add_argument('--async', action='store_true', help='Run application checks asynchronously')
-    parser.add_argument('--skip-send-report', action='store_true', help='Skip sending the report')
+    parser.add_argument('--no-report', action='store_true', help='Skip sending the report')
     parser.add_argument('--pc-position', required=False, help='The position of the device')
     parser.add_argument('--pc-number', required=False, help='The number of the device')
     parser.add_argument('--set-network', action='store_true', help='Set network configuration')
+    parser.add_argument('--custom-data', required=False, help='Custom data to replace the default data')
     args = parser.parse_args()
     
     if args.set_network:
@@ -896,7 +906,13 @@ async def main():
         print(Fore.RED + Back.YELLOW + ">>> Dangerously say yes is enabled. Skipping confirmation prompts.")
         
     # do query
-    labels =  await _scrape_ceksoft(args.username,args.password)
+    if args.custom_data:
+        os.path.exists(args.custom_data)
+        with open(args.custom_data) as f:
+            txt = f.read()
+            labels = txt.split("\n")
+    else:
+        labels =  await _scrape_ceksoft(args.username,args.password)
     
     if not labels:
         print("Error Fetching Labels : " + labels)
@@ -967,7 +983,7 @@ async def main():
 
     try:
         # Sending the report if required
-        if not args.skip_send_report:
+        if not args.no_report:
             await _send_report_invent(_json_log, **vars(args))
     except Exception as e:
         print(f"Error sending the report: {e}")
