@@ -58,7 +58,7 @@ CEKSOFT_URL_FORM = 'http://127.0.0.1:5500/ceksoft'
 PATH_TO_JSON_LOG =  os.path.join(os.path.dirname(os.path.abspath(__file__)),'log.json')
 PATH_INSTRUCTIONS = os.path.join(os.path.dirname(os.path.abspath(__file__)) , 'instructions')
 KEYBOARD_MOUSE_TEST_SITE = 'https://en.kFey-test.ru/'
-REQUIRED_MODULES = ['setuptools','pyppeteer','wmi','pytz','ntplib','platform','psutil','GPUtil','pyperclip','colorama','tabulate','pyunpack', 'patool']
+REQUIRED_MODULES = ['setuptools','pyppeteer','wmi','pytz','ntplib','platform','psutil','GPUtil','pyperclip','colorama','tabulate','pyunpack', 'patool','pywinauto']
 #######################################################################################################################
 
 #######################################################################################################################
@@ -149,6 +149,78 @@ def open_application(executable_path,app_name):
 #######################################################################################################################
 # Gui Functions
 #######################################################################################################################
+
+from scrape.host import get_current_network_config,set_network_config,get_network_interfaces
+ 
+def show_network_popup():
+    # Get available interfaces
+    interfaces = get_network_interfaces()
+    
+    if not interfaces:
+        messagebox.showerror("Error", "Failed to get network interfaces.")
+        return 
+    
+      # GUI setup
+    root = tk.Tk()
+    root.title("Network Configuration")
+
+    tk.Label(root, text="Select Interface:").grid(row=0, column=0, padx=10, pady=5)
+
+    # Create radio buttons for each interface
+    var_interface = tk.StringVar(value=interfaces[0] if interfaces else "")
+    for idx, iface in enumerate(interfaces):
+        tk.Radiobutton(root, text=iface, variable=var_interface, value=iface).grid(row=idx + 1, column=0, sticky='w', padx=10)
+
+    # Load current config for the default selected interface
+    if interfaces:
+        config = get_current_network_config(interfaces[0])
+    else:
+        config = get_current_network_config("")
+        
+    tk.Label(root, text="IP Address:").grid(row=len(interfaces) + 1, column=0, padx=10, pady=5)
+    ip_entry = tk.Entry(root)
+    ip_entry.insert(0, config["ip"])
+    ip_entry.grid(row=len(interfaces) + 1, column=1, padx=10, pady=5)
+
+    tk.Label(root, text="Subnet Mask:").grid(row=len(interfaces) + 2, column=0, padx=10, pady=5)
+    subnet_entry = tk.Entry(root)
+    subnet_entry.insert(0, config["subnet"])
+    subnet_entry.grid(row=len(interfaces) + 2, column=1, padx=10, pady=5)
+
+    tk.Label(root, text="Gateway:").grid(row=len(interfaces) + 3, column=0, padx=10, pady=5)
+    gateway_entry = tk.Entry(root)
+    gateway_entry.insert(0, config["gateway"])
+    gateway_entry.grid(row=len(interfaces) + 3, column=1, padx=10, pady=5)
+
+    tk.Label(root, text="DNS Server:").grid(row=len(interfaces) + 4, column=0, padx=10, pady=5)
+    dns_entry = tk.Entry(root)
+    dns_entry.insert(0, config["dns"])
+    dns_entry.grid(row=len(interfaces) + 4, column=1, padx=10, pady=5)
+
+    def submit():
+        selected_interface = var_interface.get()
+        ip = ip_entry.get()
+        subnet = subnet_entry.get()
+        gateway = gateway_entry.get()
+        dns = dns_entry.get()
+
+        if selected_interface:
+            if not set_network_config(selected_interface, ip, subnet, gateway, dns):
+                messagebox.showerror("Error", "Failed to set network configuration.")
+                return root.destroy()
+            messagebox.showinfo("Success", "Network configuration has been set successfully.")
+            return root.destroy()
+        else:
+            messagebox.showerror("Error", "Please select a network interface.")
+
+    submit_button = tk.Button(root, text="Apply", command=submit)
+    submit_button.grid(row=len(interfaces) + 5, column=0, columnspan=2, pady=10)
+    
+    cancel_button = tk.Button(root, text="Cancel", command=root.destroy)    
+    cancel_button.grid(row=len(interfaces) + 5, column=1, pady=10)
+
+    root.mainloop()
+    
  
 def show_info_popup(message):
  
@@ -671,88 +743,87 @@ async def get_host_info():
 import json
 from pyppeteer import launch
 
-# async def _scrape(username, password, **kwargs):
+async def _scrape_ceksoft(username, password, **kwargs):
+ 
+    labels = None
+    browser = await launch(headless=False,timeout=60000)
+    try:
+        # Launch a new browser instance
+ 
+        page = await browser.newPage()
+ 
+        # Navigate to the login page
+ 
+        await page.goto('http://192.168.10.69/ceksoft/login.php')  # Replace with your login page URL
  
  
-        # # Launch a new browser instance
+        # Fill out the login form
  
-        # browser = await launch(headless=False,timeout=60000)
+        await page.type('[name="username"]', username)  # Replace with your username input selector
  
-        # page = await browser.newPage()
- 
- 
-        # # Navigate to the login page
- 
-        # await page.goto('http://192.168.10.69/ceksoft/login.php')  # Replace with your login page URL
+        await page.type('[name="password"]', password)  # Replace with your password input selector
  
  
-        # # Fill out the login form
+        # Submit the login form
  
-        # await page.type('[name="username"]', username)  # Replace with your username input selector
+        await page.click('[name="login"]')  # Replace with your login button selector
  
-        # await page.type('[name="password"]', password)  # Replace with your password input selector
+        await page.waitForNavigation()    # Wait for navigation to complete
  
+        labels = await page.evaluate('''
  
-        # # Submit the login form
+            () => {
  
-        # await page.click('[name="login"]')  # Replace with your login button selector
+                // Find the table with the specific ID
  
-        # await page.waitForNavigation()    # Wait for navigation to complete
+                const table = document.querySelector('#dataSoftware');
  
- 
-        # # Now navigate to the page containing the table
- 
-        # # await page.goto('http://192.168.10.69/ceksoft/index.php')  # Replace with the URL of the page with the table
+                if (!table) return [];
  
  
-        # # Extract text from the label within the first cell of each row
+                // Get all rows in the table
  
-        # labels = await page.evaluate('''
+                const rows = table.querySelectorAll('tr');
  
-        #     () => {
- 
-        #         // Find the table with the specific ID
- 
-        #         const table = document.querySelector('#dataSoftware');
- 
-        #         if (!table) return [];
+                const extractedTexts = [];
  
  
-        #         // Get all rows in the table
+                rows.forEach(row => {
  
-        #         const rows = table.querySelectorAll('tr');
+                    // Find the first cell in the row
  
-        #         const extractedTexts = [];
+                    const firstCell = row.querySelector('td');
  
+                    if (firstCell) {
  
-        #         rows.forEach(row => {
+                        // Find the label element within the first cell
  
-        #             // Find the first cell in the row
+                        const label = firstCell.querySelector('label');
  
-        #             const firstCell = row.querySelector('td');
+                        if (label) {
  
-        #             if (firstCell) {
+                            extractedTexts.push(label.textContent.trim());
  
-        #                 // Find the label element within the first cell
+                        }
  
-        #                 const label = firstCell.querySelector('label');
+                    }
  
-        #                 if (label) {
- 
-        #                     extractedTexts.push(label.textContent.trim());
- 
-        #                 }
- 
-        #             }
- 
-        #         });
+                });
  
  
-        #         return extractedTexts;
+                return extractedTexts;
  
-        #     }
+            }
  
-        # ''')
+        ''')
+        
+        return labels
+    except Exception as e:
+        print("ERror on scarping ceksoft : " + str(e))
+    finally:
+        await browser.close()
+    return labels
+       
  
 
  
@@ -811,7 +882,12 @@ async def main():
     parser.add_argument('--async', action='store_true', help='Run application checks asynchronously')
     parser.add_argument('--skip-send-report', action='store_true', help='Skip sending the report')
     parser.add_argument('--pc-position', required=False, help='The position of the device')
+    parser.add_argument('--pc-number', required=False, help='The number of the device')
+    parser.add_argument('--set-network', action='store_true', help='Set network configuration')
     args = parser.parse_args()
+    
+    if args.set_network:
+        show_network_popup()
 
     _json_log['ARGS'] = vars(args)
 
@@ -819,9 +895,15 @@ async def main():
         print(Fore.RED + Back.YELLOW + ">>> Dangerously say yes is enabled. Skipping confirmation prompts.")
         
     # do query
+    labels =  await _scrape_ceksoft(args.username,args.password)
+    
+    if not labels:
+        print("Error Fetching Labels : " + labels)
+        return sys.exit(1)
+    
     
     # Print the extracted text
-    labels = ['winrar','flutter-sdk={"target":null,"minimum":"1.19.2"}',"visual-studio-code",'flutter-extension','virtualization','git', 'virtual-box', 'chrome']
+    # labels = ['date-time','winrar','flutter-sdk={"target":null,"minimum":"1.19.2"}',"visual-studio-code",'flutter-extension','virtualization','git', 'virtual-box', 'chrome']
     requirements = [ label.split('=')[1] if len(label.split("=")) == 2 else None for label in labels ]
     labels = [ label.split("=")[0] for label in labels ]
     
@@ -883,9 +965,12 @@ async def main():
         print(f"Check with : {_json_log['APPLICATION-STATUS'][app]['Check_with']}")
         print("-" * 100)
 
-    # Sending the report if required
-    if not args.skip_send_report:
-        await _send_report_invent(_json_log, **vars(args))
+    try:
+        # Sending the report if required
+        if not args.skip_send_report:
+            await _send_report_invent(_json_log, **vars(args))
+    except Exception as e:
+        print(f"Error sending the report: {e}")
  
 if __name__ == '__main__':
     asyncio.run(main())

@@ -1,4 +1,4 @@
-from scrape.instruction import Response,run_as_admin
+from scrape.instruction import Response
 from scrape.utils import download_and_save_file
 from scrape.pywinauto import wait_for_element,run_app,wait_for_window,attach_to_existing_window
 
@@ -117,6 +117,6 @@ def main(requirement: dict[str,str])-> Response:
         
     
 if __name__ == "__main__":
-    print(main({})) 
+    print(main({}))
     input("Press Enter to continue...")
      

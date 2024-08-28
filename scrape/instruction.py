@@ -60,10 +60,3 @@ def compare_app_version(current_version:str, requirements:dict,app_name) -> dict
     except Exception as e:
         return Response(False, str(e))
     
-
-import pyuac
-import sys
-
-def run_as_admin():
-    if not pyuac.isUserAdmin():
-        pyuac.runAsAdmin()

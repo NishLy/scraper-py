@@ -3,6 +3,8 @@
 #######################################################################################################################
 import wmi
 import GPUtil
+import subprocess
+import re
 
 def get_cpu_info():
     w = wmi.WMI()
@@ -185,3 +187,63 @@ def get_motherboard_info():
         motherboard_info.append(info)
     
     return motherboard_info
+
+
+def get_network_interfaces():
+    try:
+        interfaces = []
+        output = subprocess.check_output("netsh interface show interface", shell=True).decode()
+        for line in output.splitlines():
+            match = re.search(r"^\s*Enabled\s+Connected\s+\S+\s+([\w\s\-]+)$", line)
+            if match:
+                interfaces.append(match.group(1).strip())
+        
+        return interfaces
+    except subprocess.CalledProcessError as e:
+        print("Failed to get network interfaces. -> " + str(e))
+        return None
+
+def get_current_network_config(interface):
+    try:
+        output = subprocess.check_output(f'netsh interface ip show config name=\"{interface}"', shell=True).decode()
+        # Extract information using regex
+        dhcp_enabled = re.search(r"DHCP enabled:\s+(Yes|No)", output)
+        ip_address = re.search(r"IP Address:\s+([\d.]+)", output)
+        subnet_mask = re.search(r"Subnet Prefix:\s+[\d./]+\s+\(mask\s+([\d.]+)\)", output)
+        default_gateway = re.search(r"Default Gateway:\s+([\d.]+)", output)
+        dns_servers = re.findall(r"Statically Configured DNS Servers:\s+([\d.]+)|^\s+([\d.]+)", output, re.MULTILINE)
+
+        # Process extracted data
+        dhcp_enabled_value = dhcp_enabled.group(1) if dhcp_enabled else None
+        ip_address_value = ip_address.group(1) if ip_address else None
+        subnet_mask_value = subnet_mask.group(1) if subnet_mask else None
+        default_gateway_value = default_gateway.group(1) if default_gateway else None
+        dns_servers_values = [match[0] or match[1] for match in dns_servers]
+
+        # Update configuration dictionary
+        config = {}
+        config["ip"] = ip_address_value
+        config["subnet"] = subnet_mask_value
+        config["gateway"] = default_gateway_value
+        config["dns"] = ", ".join(dns_servers_values)
+        config["dhcp"] = dhcp_enabled_value
+        
+        return config
+        
+    except subprocess.CalledProcessError as e:
+        print("Failed to get network configuration. -> " + str(e))
+        return None
+    
+
+def set_network_config(interface, ip, subnet, gateway, dns):
+    try:
+        dns = dns.split(",")[0]  # Only use the first DNS server
+        subprocess.run(f"netsh interface ip set address \"{interface}\" static {ip} {subnet} {gateway} 1", shell=True, check=True)
+        subprocess.run(f'netsh interface ip delete dns "{interface}" all', shell=True, check=True)
+        for i, dns_server in enumerate(dns.split(",")):
+            dns_server = dns_server.strip()
+            subprocess.run(f"netsh interface ip add dns \"{interface}\" addr={dns_server} index={i + 1}", shell=True, check=True)
+        return True
+    except subprocess.CalledProcessError as e:
+        print("Failed to set network configuration. -> " + str(e))
+        return False

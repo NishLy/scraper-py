@@ -16,7 +16,7 @@ set "SCRIPT_DIR=%~dp0"
 :: Install Python dependencies
 python install -r "%SCRIPT_DIR%requirements.txt"
 
-:: Python venv excutable, using relative path
+:: Python venv executable, using relative path
 set "PYTHON_EXECUTABLE=%SCRIPT_DIR%.scraper-venv\Scripts\python.exe"
 
 :: Define the relative path to your Python script
@@ -25,8 +25,11 @@ set "RELATIVE_PYTHON_SCRIPT_PATH=scrape.py"
 :: Combine the directory and relative path to get the full path to the Python script
 set "PYTHON_SCRIPT_PATH=%SCRIPT_DIR%%RELATIVE_PYTHON_SCRIPT_PATH%"
 
-:: Construct the command to run the Python script
-set "COMMAND=%PYTHON_EXECUTABLE% \"%PYTHON_SCRIPT_PATH%\""
+:: Check if there are additional arguments provided
+set "ARGS=%*"
+
+:: Construct the command to run the Python script with additional arguments
+set "COMMAND=%PYTHON_EXECUTABLE% \"%PYTHON_SCRIPT_PATH%\" %ARGS%"
 
 :: Run the Python script as an administrator and keep the window open
 echo Running Python script as administrator...
