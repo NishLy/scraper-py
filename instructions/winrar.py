@@ -10,7 +10,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 RESOURE_SOURCE_URL = "https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-701.exe"
-DOWNLOAD_SAVE_PATH = os.path.join(os.getcwd(), "instructions\\downloads")
+DOWNLOAD_SAVE_PATH = os.path.join(os.path.abspath(__file__), "instructions\\downloads")
 FILE_NAME = "winrar-x64-701.exe"
 
 
