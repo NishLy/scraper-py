@@ -8,7 +8,6 @@ import platform
 import threading
 import argparse
 import tkinter as tk
-import queue
 from tkinter import messagebox
 from datetime import datetime
 from functools import partial
@@ -764,15 +763,13 @@ async def _scrape_ceksoft(username, password, **kwargs):
  
         # Navigate to the login page
  
-        await page.goto('http://192.168.10.69/ceksoft/login.php')  # Replace with your login page URL
- 
+        await page.goto(CEKSOFT_URL_LOGIN)  # Replace with your login page URL
  
         # Fill out the login form
  
         await page.type('[name="username"]', username)  # Replace with your username input selector
  
         await page.type('[name="password"]', password)  # Replace with your password input selector
- 
  
         # Submit the login form
  
