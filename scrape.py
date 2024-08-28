@@ -127,7 +127,7 @@ def open_application(executable_path,app_name):
         
         if get_yes_or_no("Open the installation path? (y,n)"):
             subprocess.run(
-            ['powershell', '-NoProfile', '-Command',f'explorer {executable_path}'], shell=True,check=True
+            ['powershell', '-NoProfile', '-Command',f'explorer "{executable_path}"'], shell=True,check=True
         )
 
         get_yes_or_no("Is in the installation path have executable file and it run successfuly ? (y,n)")
@@ -543,13 +543,13 @@ def _check_app(label_app_name,**kwargs):
                 
             except Exception as e:
                 print(Back.RED + Fore.WHITE + f"Error open {label_app_name} with WMI : {e}")
-                print(Back.YELLOW + Fore.BACK + "Skiping 'WMI' because error occured")
+                print(Back.YELLOW + Fore.BLACK + "Skiping 'WMI' because error occured")
                 log_app["Status"] = "NOT_INSTALLED"
                 log_app["Description"] = log_app["Description"] + " - " + f"Error loading module: {e}"    
                             
     if not check_with and (result := find_installed_apps_by_registry(label_app_name.replace("-", ""))) not in [None, {}] :
         print(Fore.CYAN + f"{label_app_name} is detected in REGISTRY. Trying to open the application...")
-        if all(value == "N/A" for value in result.values()):
+        if all(result[app]['source'] == "N/A" for app in result):
             print(Fore.BLACK + Back.YELLOW + f"{label_app_name} found in REGISTRY, But REGISTRY cannot provide instalation path. Skiping REGISTRY or try open it manualy")
             log_app["Description"] = log_app["Description"] + " - " + f"{label_app_name} found in REGISTRY, But REGISTRY cannot provide instalation path."
         else:
@@ -557,14 +557,15 @@ def _check_app(label_app_name,**kwargs):
                 key = 0
                 if len(result) > 1:
                     print(Fore.MAGENTA + f"Multiple installations in REGISTRY found for '{label_app_name}'. Please select or open each istalation path" )
-                    key = chose_app_to_open(result)
+                    result_modified = {app:result[app]['source'] for app in result}
+                    key = chose_app_to_open(result_modified)
                 else:
                     key = list(result.keys())[0]
                 
                 evaluate = None
                 
                 if key != -1:
-                    evaluate = open_application(result[key],label_app_name)
+                    evaluate = open_application(result[key]['source'],label_app_name)
                     
                 if show_confirmation_popup(f"Did {label_app_name} working successfully?",no_confirm=kwargs.get("dangerously_say_yes",False),evaluate=evaluate):
                     print(Fore.GREEN + f">>> {label_app_name} is working. Marked as installed.")
@@ -895,15 +896,14 @@ async def main():
         print(Fore.RED + Back.YELLOW + ">>> Dangerously say yes is enabled. Skipping confirmation prompts.")
         
     # do query
-    # labels =  await _scrape_ceksoft(args.username,args.password)
+    labels =  await _scrape_ceksoft(args.username,args.password)
     
-    # if not labels:
-    #     print("Error Fetching Labels : " + labels)
-    #     return sys.exit(1)
-    
+    if not labels:
+        print("Error Fetching Labels : " + labels)
+        return sys.exit(1)
     
     # Print the extracted text
-    labels = ['git','date-time','winrar','flutter-sdk={"target":null,"minimum":"1.19.2"}',"visual-studio-code",'flutter-extension','virtualization','git', 'virtual-box', 'chrome']
+    # labels = ['git','date-time','winrar','flutter-sdk={"target":null,"minimum":"1.19.2"}',"visual-studio-code",'flutter-extension','virtualization','git', 'virtual-box', 'chrome']
     requirements = [ label.split('=')[1] if len(label.split("=")) == 2 else None for label in labels ]
     labels = [ label.split("=")[0] for label in labels ]
     

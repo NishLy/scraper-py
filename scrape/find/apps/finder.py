@@ -23,7 +23,7 @@ def find_installed_apps_by_wmi(app_name):
     return apps_info
 
 def find_installed_apps_by_registry(app_name):
-    """Find installed applications and their install locations using the Windows Registry."""
+    """Find installed applications and their versions and install locations using the Windows Registry."""
     # Registry paths to search
     registry_paths = [
         r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
@@ -44,7 +44,11 @@ def find_installed_apps_by_registry(app_name):
                             display_name = winreg.QueryValueEx(subkey, 'DisplayName')[0]
                             if app_name.lower() in display_name.lower():
                                 install_location = winreg.QueryValueEx(subkey, 'InstallLocation')[0] if winreg.QueryValueEx(subkey, 'InstallLocation')[0] else "N/A"
-                                apps_info[display_name] = install_location
+                                version = winreg.QueryValueEx(subkey, 'DisplayVersion')[0] if winreg.QueryValueEx(subkey, 'DisplayVersion')[0] else "N/A"
+                                apps_info[display_name] = {
+                                    'version': version,
+                                    'source': install_location
+                                }
                         except FileNotFoundError:
                             pass
         except FileNotFoundError:
