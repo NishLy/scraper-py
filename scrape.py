@@ -100,7 +100,7 @@ check_required_modules(REQUIRED_MODULES)
 from colorama import Fore, Style, init, Back
 from scrape.instruction import compare_app_version
 from scrape.time import set_time
-from scrape.find.apps import find_installed_apps_by_wmi,find_installed_apps_by_registry,find_executable_on_path,find_installed_apps_by_getpackage
+from scrape.apps import find_installed_apps_by_registry,find_executable_on_path,find_installed_apps_by_getpackage
 from scrape.host.check import check_virtualization,check_keyboard,check_mouse
 
 init(autoreset=True)
@@ -973,7 +973,11 @@ async def main():
     print("-" * 100)
 
     for i, app in enumerate(_json_log['APPLICATION-STATUS']):
-        print(f"{i}. {app} : {_json_log['APPLICATION-STATUS'][app]['Status']}")
+        print(f"App {i}")
+        print(f"Name : {app}")
+        print(f"Status : {_json_log['APPLICATION-STATUS'][app]['Status']}")
+        print(f"Install Location : {_json_log['APPLICATION-STATUS'][app]['Install_Location']}")
+        print(f"Version : {_json_log['APPLICATION-STATUS'][app]['Version']}")
         print(f"Description : {_json_log['APPLICATION-STATUS'][app]['Description']}")
         print(f"Check Duration : {_json_log['APPLICATION-STATUS'][app]['Check_Time']} seconds")
         print(f"Check with : {_json_log['APPLICATION-STATUS'][app]['Check_with']}")

@@ -1,10 +1,20 @@
 
 
-def Response(status:bool, message:str, data:dict = {}) -> dict:
+def Response(status:bool, message:str, version = "N/A", path = "N/A") -> dict[str,str,str,str]:
+    """ Return a response dictionary with status, message, version, and path.
+    
+    :param status: Boolean status of the response
+    :param message: Message describing the response
+    :param version: Version string (default: 'N/A')
+    :param path: Path string (default: 'N/A')
+    
+    :return: Dictionary containing status, message, version, and path
+    """
     return {
         "status": status,
         "message": message,
-        "data": data
+        "version": version,
+        "path": path
     }
     
     
