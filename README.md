@@ -41,25 +41,38 @@ python scraper.py [OPTIONS]
 - `--pc-position`: Specify the position of the device in the lab (optional).
 - `--pc-number`: Specify the number of the device in the lab (optional).
 - `--set-network`: Enable network configuration settings (optional).
-- `--custom-data`: Provide custom data to replace the default data (optional).
+- `--custom-data`: Provide custom data to override the default scraping process (optional).
+
+### Custom Data
+
+The `--custom-data` parameter allows you to override the default scraping from the 'ceksoft' web app in the internal UPT. Instead, you can use a custom text file containing a list of applications and their requirements.
+
+Example format for the custom data file:
+
+```
+flutter-sdk={"target":null,"minimum":"1.0.0"}
+app2={"target":"2.0.0","minimum":"1.5.0"}
+```
+
+In this format:
+- **target**: The specific version you want to ensure is installed (can be `null` if not specified).
+- **minimum**: The minimum version required.
+
+This custom data will be used to check and install applications according to the specified requirements.
 
 ### Example Usage
 
 ```bash
-python scraper.py --username admin --password secret --skip-checked --async --pc-position "Lab 1" --pc-number 01 --set-network
+python scraper.py --username admin --password secret --skip-checked --async --pc-position "Lab 1" --pc-number 01 --set-network --custom-data /path/to/custom_data.txt
 ```
 
-This command will log in with the given credentials, skip already checked applications, perform checks asynchronously, and set the network configuration for device 01 in Lab 1.
-
-### Custom Instructions
-
-You can import custom instructions or configurations for specific applications by using the `--custom-data` parameter. This allows you to tailor the behavior of the script to specific requirements.
+This command will log in with the given credentials, skip already checked applications, perform checks asynchronously, set the network configuration for device 01 in Lab 1, and use the custom data from the provided text file.
 
 ## Features
 
 - **Automated Application Checks**: The script automates the process of checking and installing applications in the computer lab, saving time and effort.
 - **Asynchronous Operation**: You can enable asynchronous checks for faster execution.
-- **Custom Data**: Replace default data with your own custom instructions for specific applications.
+- **Custom Data**: Replace default scraping with your own custom instructions for specific applications.
 - **Network Configuration**: Optionally configure network settings for each device.
 
 ## License
