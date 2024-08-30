@@ -1,6 +1,5 @@
 __pycache__
 *.pyc
-*.txt
 log.json
 *.exe
 *.msi
@@ -14,3 +13,5 @@ log.json
 .scraper-venv
 
 *.html
+*_error.txt
+*_output.txt

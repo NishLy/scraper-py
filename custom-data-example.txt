@@ -1,0 +1,2 @@
+git={"target":null,"minimum":"2.50.0"}
+flutter-sdk
